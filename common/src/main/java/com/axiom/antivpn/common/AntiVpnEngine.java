@@ -178,36 +178,24 @@ public final class AntiVpnEngine implements AntiVpnAPI {
     }
 
     public boolean shouldBlock(@NotNull VpnResponse response) {
-        platform.getPluginLogger().info("[DEBUG] Checking IP: " + response.ip() +
-                " | vpn=" + response.vpn() + " proxy=" + response.proxy() +
-                " tor=" + response.tor() + " datacenter=" + response.datacenter() +
-                " score=" + response.riskScore() + " country=" + response.countryCode());
-
         if (response.countryCode() != null) {
             for (String country : settings.getWhitelistedCountries()) {
                 if (country.equalsIgnoreCase(response.countryCode())) {
-                    platform.getPluginLogger().info("[DEBUG] Country whitelisted: " + response.countryCode());
                     return false;
                 }
             }
         }
 
-        Set<DetectionType> blocked = settings.getBlockedTypes();
-        platform.getPluginLogger().info("[DEBUG] Blocked types configured: " + blocked);
-
         if (response.riskScore() >= settings.getRiskScoreThreshold()) {
-            platform.getPluginLogger().info("[DEBUG] BLOCKED by risk score: " + response.riskScore() + " >= " + settings.getRiskScoreThreshold());
             return true;
         }
 
-        for (DetectionType type : blocked) {
+        for (DetectionType type : settings.getBlockedTypes()) {
             if (type.isBlocked(response)) {
-                platform.getPluginLogger().info("[DEBUG] BLOCKED by type: " + type);
                 return true;
             }
         }
 
-        platform.getPluginLogger().info("[DEBUG] NOT BLOCKED - no match");
         return false;
     }
 

@@ -135,15 +135,13 @@ public final class VelocityCommand implements SimpleCommand {
     }
 
     private void handleStatus(@NotNull Invocation invocation, @NotNull Messages messages) {
+        long start = System.currentTimeMillis();
         engine.getStatus().thenAccept(status -> {
+            long latency = System.currentTimeMillis() - start;
             if (status.isOperational()) {
-                double latency = 0;
-                var apiService = status.services().get("api");
-                if (apiService != null) {
-                    latency = apiService.responseTimeMs();
-                }
                 send(invocation, messages.format(messages.getStatusOnline())
-                        .replace("{latency}", String.format("%.1f", latency)));
+                        .replace("{latency}", String.valueOf(latency))
+                        .replace("{status}", status.overallStatus().toUpperCase()));
             } else {
                 send(invocation, messages.format(messages.getStatusOffline()));
             }

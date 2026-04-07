@@ -9,7 +9,8 @@ public record ApiStatus(
 ) {
 
     public boolean isOperational() {
-        return "operational".equalsIgnoreCase(overallStatus);
+        return "operational".equalsIgnoreCase(overallStatus)
+                || "degraded".equalsIgnoreCase(overallStatus);
     }
 
     public record ServiceStatus(
