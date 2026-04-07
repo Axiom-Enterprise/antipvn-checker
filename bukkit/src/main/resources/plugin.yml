@@ -1,0 +1,26 @@
+name: AxiomAntiVPN
+version: '1.0.0'
+main: com.axiom.antivpn.bukkit.BukkitAntiVpnPlugin
+api-version: '1.13'
+description: Advanced VPN & Proxy Detection powered by Axiom AntiVPN API
+authors: [Axiom]
+website: https://antivpn.mathsanalysis.com
+softdepend: []
+
+commands:
+  antivpn:
+    description: Axiom AntiVPN management command
+    usage: /antivpn <check|whitelist|status|cache|reload>
+    aliases: [avpn, axiomvpn]
+    permission: antivpn.admin
+
+permissions:
+  antivpn.admin:
+    description: Access to all AntiVPN commands
+    default: op
+  antivpn.bypass:
+    description: Bypass VPN detection checks
+    default: false
+  antivpn.alerts:
+    description: Receive staff alerts when a player is blocked
+    default: op

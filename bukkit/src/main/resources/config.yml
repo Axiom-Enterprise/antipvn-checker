@@ -1,0 +1,70 @@
+# ╔══════════════════════════════════════════════════════════════╗
+# ║              Axiom AntiVPN - Configuration                  ║
+# ║     https://antivpn.mathsanalysis.com                       ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+api:
+  # Your API key from https://antivpn.mathsanalysis.com
+  # Format: axm_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  key: ""
+
+  # API base URL (do not change unless instructed)
+  base-url: "https://antivpn.mathsanalysis.com/api"
+
+  # Request timeout in milliseconds
+  timeout-ms: 5000
+
+  # Maximum retry attempts on failure
+  max-retries: 2
+
+detection:
+  # Which connection types to block
+  # Available: VPN, PROXY, TOR, DATACENTER
+  blocked-types:
+    - "VPN"
+    - "PROXY"
+    - "TOR"
+    - "DATACENTER"
+
+  # Risk score threshold (0-100). Players with a score >= this value will be blocked
+  risk-score-threshold: 75
+
+  # Block players when the API is unreachable
+  block-on-api-failure: false
+
+cache:
+  # How long to cache results (in seconds)
+  ttl-seconds: 600
+
+  # Maximum number of cached entries
+  max-size: 10000
+
+
+whitelist:
+  # Whitelisted IP addresses (bypasses VPN check)
+  ips: []
+
+  # Whitelisted player UUIDs (bypasses VPN check)
+  players: []
+
+  # Whitelisted country codes (ISO 3166-1 alpha-2)
+  # Players from these countries will not be blocked
+  countries: []
+
+alerts:
+  # Enable staff alerts when a player is blocked
+  enabled: true
+
+  # Permission required to receive alerts
+  permission: "antivpn.alerts"
+
+
+connection:
+  # Check players when they join the server
+  check-on-login: true
+
+  # Check players when they switch servers (proxy only)
+  check-on-server-switch: false
+
+  # Perform checks asynchronously (recommended: true)
+  async-check: true

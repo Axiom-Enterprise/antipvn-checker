@@ -1,0 +1,23 @@
+plugins {
+    id 'java'
+    id 'com.gradleup.shadow'
+}
+
+dependencies {
+    implementation project(':common')
+    compileOnly 'org.spigotmc:spigot-api:1.21.4-R0.1-SNAPSHOT'
+}
+
+shadowJar {
+    archiveClassifier.set('')
+    archiveBaseName.set('AxiomAntiVPN-Bukkit')
+
+    relocate 'com.github.benmanes.caffeine', 'com.axiom.antivpn.libs.caffeine'
+    relocate 'com.google.gson', 'com.axiom.antivpn.libs.gson'
+
+    minimize {
+        exclude dependency('com.github.ben-manes.caffeine:.*')
+    }
+}
+
+build.dependsOn shadowJar

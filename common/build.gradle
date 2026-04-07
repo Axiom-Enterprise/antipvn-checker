@@ -1,0 +1,9 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    api project(':api')
+    api 'com.github.ben-manes.caffeine:caffeine:3.2.0'
+    api 'com.google.code.gson:gson:2.12.1'
+}

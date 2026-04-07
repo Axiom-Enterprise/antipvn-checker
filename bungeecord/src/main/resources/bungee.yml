@@ -1,0 +1,5 @@
+name: AxiomAntiVPN
+main: com.axiom.antivpn.bungee.BungeeAntiVpnPlugin
+version: 1.0.0
+description: Advanced VPN & Proxy Detection powered by Axiom AntiVPN API
+author: Axiom

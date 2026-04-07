@@ -1,0 +1,38 @@
+# Plugin prefix used in all messages
+prefix: "&#7C3AED&lAxiom &8» &7"
+
+# Message shown to blocked players
+kick-message: "&c&lVPN Detected\n\n&7Your connection has been blocked.\n&7Disable your VPN/Proxy and reconnect.\n\n&8Risk Score: {risk_score} | {detection_type}"
+
+# Alert sent to staff when a player is blocked
+alert-message: "{prefix}&e{player} &7was blocked &8(&c{detection_type}&8) &7IP: &f{ip} &7Score: &c{risk_score}"
+
+# Whitelist messages
+whitelist-add: "{prefix}&a{target} &7has been whitelisted."
+whitelist-remove: "{prefix}&c{target} &7has been removed from the whitelist."
+whitelist-already: "{prefix}&e{target} &7is already whitelisted."
+whitelist-not-found: "{prefix}&c{target} &7is not whitelisted."
+
+# Command messages
+reload-success: "{prefix}&aConfiguration reloaded successfully."
+no-permission: "{prefix}&cYou do not have permission to use this command."
+player-not-found: "{prefix}&cPlayer not found."
+invalid-ip: "{prefix}&cInvalid IP address."
+
+# Check result display
+check-result: "{prefix}&7IP: &f{ip} &8| &7VPN: {vpn_status} &8| &7Proxy: {proxy_status} &8| &7Score: &e{risk_score} &8| &7ISP: &f{isp} &8| &7Country: &f{country}"
+check-safe: "&a&lSAFE"
+check-blocked: "&c&lBLOCKED"
+
+# Cache messages
+cache-cleared: "{prefix}&aCache has been cleared. &7({size} entries removed)"
+
+# Status messages
+status-online: "{prefix}&aAPI Status: &2ONLINE &8| &7Latency: &a{latency}ms"
+status-offline: "{prefix}&cAPI Status: &4OFFLINE"
+
+# Help message
+usage-help: "{prefix}&eUsage:\n&7/antivpn check <ip> &8- &7Check an IP\n&7/antivpn whitelist add <ip|player> &8- &7Whitelist\n&7/antivpn whitelist remove <ip|player> &8- &7Remove whitelist\n&7/antivpn status &8- &7API status\n&7/antivpn cache clear &8- &7Clear cache\n&7/antivpn reload &8- &7Reload config"
+
+# API key not configured
+api-key-missing: "{prefix}&cAPI key is not configured! Set it in config.yml"
