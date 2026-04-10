@@ -25,7 +25,7 @@ public final class VelocityListener {
         this.engine = engine;
     }
 
-    @Subscribe(priority = )
+    @Subscribe(order = PostOrder.LATE)
     public void onPreLogin(@NotNull PreLoginEvent event, @NotNull Continuation continuation) {
         if (!engine.getSettings().isCheckOnLogin()) {
             continuation.resume();
