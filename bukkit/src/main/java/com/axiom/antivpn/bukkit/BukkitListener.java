@@ -30,14 +30,12 @@ public final class BukkitListener implements Listener {
             if (engine.shouldBlock(response)) {
                 String kickMsg = engine.getMessages().format(engine.getMessages().getKickMessage(), response);
                 event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, kickMsg);
-
                 engine.alertAndLog(event.getUniqueId(), event.getName(), ip, response);
             }
         } catch (Exception e) {
             engine.getPlatform().getPluginLogger().warning("Failed to check IP " + ip + ": " + e.getMessage());
             if (engine.getSettings().isBlockOnApiFailure()) {
-                event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER,
-                        engine.getMessages().format(engine.getMessages().getKickMessage()));
+                event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, engine.getMessages().format(engine.getMessages().getKickMessage()));
             }
         }
     }

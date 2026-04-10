@@ -64,10 +64,11 @@ public final class BungeeCommand extends Command implements TabExecutor {
             send(sender, messages.format(messages.getInvalidIp()));
             return;
         }
+
         send(sender, messages.format("{prefix}&7Checking IP &f" + ip + "&7..."));
-        engine.checkIp(ip).thenAccept(response ->
-                send(sender, messages.format(messages.getCheckResult(), response))
-        ).exceptionally(ex -> {
+        engine.checkIp(ip).thenAccept(response -> {
+            send(sender, messages.format(messages.getCheckResult(), response));
+        }).exceptionally(ex -> {
             send(sender, messages.format("{prefix}&cFailed to check IP: " + ex.getMessage()));
             return null;
         });
@@ -78,6 +79,7 @@ public final class BungeeCommand extends Command implements TabExecutor {
             send(sender, messages.format(messages.getUsageHelp()));
             return;
         }
+
         String action = args[1].toLowerCase(Locale.ROOT);
         String target = args[2];
 

@@ -18,7 +18,7 @@ import java.util.concurrent.CompletableFuture;
 public final class VelocityCommand implements SimpleCommand {
 
     private static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.builder()
-            .character('\u00A7')
+            .character('§')
             .hexColors()
             .build();
 

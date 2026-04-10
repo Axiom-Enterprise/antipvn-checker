@@ -41,8 +41,14 @@ public final class BungeeAntiVpnPlugin extends Plugin {
 
     private void saveDefaultResource(String name) {
         if (!getDataFolder().exists()) {
-            getDataFolder().mkdirs();
+            try {
+                Files.createDirectories(getDataFolder().toPath());
+            } catch (IOException e) {
+                getLogger().severe("Failed to create data folder");
+                return;
+            }
         }
+
         File file = new File(getDataFolder(), name);
         if (!file.exists()) {
             try (InputStream in = getResourceAsStream(name)) {

@@ -15,7 +15,6 @@ public final class VelocityConfig implements PluginConfig {
     private final @NotNull Path filePath;
     private final @NotNull Logger logger;
     private final Map<String, Object> data = new LinkedHashMap<>();
-    private List<String> rawLines = new ArrayList<>();
 
     public VelocityConfig(@NotNull Path filePath, @NotNull Logger logger) {
         this.filePath = filePath;
@@ -68,7 +67,6 @@ public final class VelocityConfig implements PluginConfig {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public @NotNull List<String> getStringList(@NotNull String path) {
         Object val = resolve(path);
         if (val instanceof List<?> list) {
@@ -82,7 +80,6 @@ public final class VelocityConfig implements PluginConfig {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public @NotNull Set<String> getKeys(@NotNull String path) {
         Object val = resolve(path);
         if (val instanceof Map<?, ?> map) {
@@ -96,7 +93,6 @@ public final class VelocityConfig implements PluginConfig {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public @NotNull Map<String, Object> getSection(@NotNull String path) {
         Object val = resolve(path);
         if (val instanceof Map<?, ?> map) {
@@ -149,14 +145,13 @@ public final class VelocityConfig implements PluginConfig {
         data.clear();
         if (!Files.exists(filePath)) return;
         try {
-            rawLines = Files.readAllLines(filePath);
+            List<String> rawLines = Files.readAllLines(filePath);
             parseYaml(rawLines, data, 0, 0);
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Failed to load config: " + filePath.getFileName(), e);
         }
     }
 
-    @SuppressWarnings("unchecked")
     private Object resolve(@NotNull String path) {
         String[] parts = path.split("\\.");
         Object current = data;
@@ -283,20 +278,21 @@ public final class VelocityConfig implements PluginConfig {
         String prefix = " ".repeat(indent);
         for (Map.Entry<String, Object> entry : map.entrySet()) {
             Object value = entry.getValue();
-            if (value instanceof Map<?, ?> nested) {
-                lines.add(prefix + entry.getKey() + ":");
-                @SuppressWarnings("unchecked")
-                Map<String, Object> typedNested = (Map<String, Object>) nested;
-                writeMap(lines, typedNested, indent + 2);
-            } else if (value instanceof List<?> list) {
-                lines.add(prefix + entry.getKey() + ":");
-                for (Object item : list) {
-                    lines.add(prefix + "  - \"" + item + "\"");
+            switch (value) {
+                case Map<?, ?> nested -> {
+                    lines.add(prefix + entry.getKey() + ":");
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> typedNested = (Map<String, Object>) nested;
+                    writeMap(lines, typedNested, indent + 2);
                 }
-            } else if (value instanceof String s) {
-                lines.add(prefix + entry.getKey() + ": \"" + s + "\"");
-            } else {
-                lines.add(prefix + entry.getKey() + ": " + value);
+                case List<?> list -> {
+                    lines.add(prefix + entry.getKey() + ":");
+                    for (Object item : list) {
+                        lines.add(prefix + "  - \"" + item + "\"");
+                    }
+                }
+                case String s -> lines.add(prefix + entry.getKey() + ": \"" + s + "\"");
+                case null, default -> lines.add(prefix + entry.getKey() + ": " + value);
             }
         }
     }

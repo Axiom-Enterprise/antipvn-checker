@@ -10,10 +10,12 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.concurrent.ForkJoinPool;
+
 public final class VelocityListener {
 
     private static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.builder()
-            .character('\u00A7')
+            .character('§')
             .hexColors()
             .build();
 
@@ -23,7 +25,7 @@ public final class VelocityListener {
         this.engine = engine;
     }
 
-    @Subscribe(order = PostOrder.LATE)
+    @Subscribe(priority = )
     public void onPreLogin(@NotNull PreLoginEvent event, @NotNull Continuation continuation) {
         if (!engine.getSettings().isCheckOnLogin()) {
             continuation.resume();
@@ -32,6 +34,11 @@ public final class VelocityListener {
 
         String ip = event.getConnection().getRemoteAddress().getAddress().getHostAddress();
         if (IpUtil.isLocalIp(ip)) {
+            continuation.resume();
+            return;
+        }
+
+        if (engine.getSettings().getWhitelistedIps().contains(ip) || engine.getSettings().getWhitelistedPlayers().contains(event.getUsername())) {
             continuation.resume();
             return;
         }

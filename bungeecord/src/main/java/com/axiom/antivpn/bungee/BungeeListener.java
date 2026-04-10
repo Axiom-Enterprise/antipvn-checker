@@ -37,7 +37,7 @@ public final class BungeeListener implements Listener {
                     engine.alertAndLog(null, event.getConnection().getName(), ip, response);
                 }
             } finally {
-                event.completeIntent((net.md_5.bungee.api.plugin.Plugin) ((BungeePlatform) engine.getPlatform()).getPlugin());
+                event.completeIntent(((BungeePlatform) engine.getPlatform()).getPlugin());
             }
         }).exceptionally(ex -> {
             try {
@@ -48,7 +48,7 @@ public final class BungeeListener implements Listener {
                             engine.getMessages().format(engine.getMessages().getKickMessage())));
                 }
             } finally {
-                event.completeIntent((net.md_5.bungee.api.plugin.Plugin) ((BungeePlatform) engine.getPlatform()).getPlugin());
+                event.completeIntent(((BungeePlatform) engine.getPlatform()).getPlugin());
             }
             return null;
         });

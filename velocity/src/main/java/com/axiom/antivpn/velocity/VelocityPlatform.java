@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 public final class VelocityPlatform implements Platform {
 
     private static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.builder()
-            .character('\u00A7')
+            .character('§')
             .hexColors()
             .build();
 

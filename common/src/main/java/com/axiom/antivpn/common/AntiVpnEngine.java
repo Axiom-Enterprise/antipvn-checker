@@ -47,7 +47,6 @@ public final class AntiVpnEngine implements AntiVpnAPI {
         AntiVpnProvider.register(this);
     }
 
-
     @Override
     public @NotNull CompletableFuture<VpnResponse> checkIp(@NotNull String ip) {
         VpnResponse cached = cache.get(ip);
@@ -70,20 +69,18 @@ public final class AntiVpnEngine implements AntiVpnAPI {
             arr.add(ip);
         }
         body.add("ips", arr);
-        return httpClient.postAsync("/check/batch", body.toString())
-                .thenApply(json -> {
-                    List<VpnResponse> responses = ResponseParser.parseBatchResponse(json);
-                    for (VpnResponse r : responses) {
-                        cache.put(r.ip(), r);
-                    }
-                    return responses;
-                });
+        return httpClient.postAsync("/check/batch", body.toString()).thenApply(json -> {
+            List<VpnResponse> responses = ResponseParser.parseBatchResponse(json);
+            for (VpnResponse r : responses) {
+                cache.put(r.ip(), r);
+            }
+            return responses;
+        });
     }
 
     @Override
     public @NotNull CompletableFuture<ApiStatus> getStatus() {
-        return httpClient.getAsync("/status")
-                .thenApply(ResponseParser::parseStatusResponse);
+        return httpClient.getAsync("/status").thenApply(ResponseParser::parseStatusResponse);
     }
 
     @Override
