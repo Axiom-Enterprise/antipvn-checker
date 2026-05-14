@@ -23,6 +23,10 @@ public final class BukkitListener implements Listener {
         String ip = event.getAddress().getHostAddress();
         if (IpUtil.isLocalIp(ip)) return;
 
+        if (engine.getWhitelist().isIpWhitelisted(ip) || engine.getWhitelist().isPlayerWhitelisted(event.getUniqueId())) {
+            return;
+        }
+
         try {
             var response = engine.checkIp(ip).join();
             if (response == null) return;

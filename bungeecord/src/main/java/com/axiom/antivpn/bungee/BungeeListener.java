@@ -25,6 +25,8 @@ public final class BungeeListener implements Listener {
         String ip = event.getConnection().getAddress().getAddress().getHostAddress();
         if (IpUtil.isLocalIp(ip)) return;
 
+        if (engine.getWhitelist().isIpWhitelisted(ip)) return;
+
         event.registerIntent((net.md_5.bungee.api.plugin.Plugin) ((BungeePlatform) engine.getPlatform()).getPlugin());
 
         engine.checkIp(ip).thenAccept(response -> {
