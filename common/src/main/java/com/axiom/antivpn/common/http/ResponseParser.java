@@ -73,7 +73,7 @@ public final class ResponseParser {
                 getBool(data, "is_datacenter"),
                 getBool(data, "is_residential"),
                 false,
-                getInt(data, "threat_score", getInt(data, "score", 0)),
+                getInt(data, "risk_score", 0),
                 getStringOrNull(data, "org"),
                 getStringOrNull(data, "country_name"),
                 getStringOrNull(data, "country"),
