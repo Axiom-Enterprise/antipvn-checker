@@ -1,19 +1,26 @@
 package com.axiom.antivpn.velocity;
 
 import com.axiom.antivpn.common.AntiVpnEngine;
+import com.axiom.antivpn.common.command.OnlinePlayerNames;
 import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
+import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
-import org.slf4j.LoggerFactory;
+import revxrsal.commands.Lamp;
+import revxrsal.commands.velocity.VelocityLamp;
+import revxrsal.commands.velocity.VelocityVisitors;
+import revxrsal.commands.velocity.actor.VelocityCommandActor;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 @Plugin(
@@ -57,14 +64,24 @@ public final class VelocityAntiVpnPlugin {
 
         server.getEventManager().register(this, new VelocityListener(engine));
 
-        var meta = server.getCommandManager().metaBuilder("antivpn")
-                .aliases("avpn", "axiomvpn")
-                .plugin(this)
+        Lamp<VelocityCommandActor> lamp = VelocityLamp.builder(this, server)
+                .suggestionProviders(suggestions -> suggestions.addProviderForAnnotationLast(
+                        OnlinePlayerNames.class, ann -> context -> onlinePlayerNames()))
+                .exceptionHandler(new VelocityVpnExceptionHandler(engine))
                 .build();
-
-        server.getCommandManager().register(meta, new VelocityCommand(engine));
+        lamp.register(new AntiVpnCommand(engine));
+        lamp.register(new VpnWhitelistCommand(engine, server));
+        lamp.accept(VelocityVisitors.brigadier(server));
 
         logger.info("AxiomAntiVPN enabled on Velocity");
+    }
+
+    private List<String> onlinePlayerNames() {
+        List<String> names = new ArrayList<>();
+        for (Player player : server.getAllPlayers()) {
+            names.add(player.getUsername());
+        }
+        return names;
     }
 
     @Subscribe

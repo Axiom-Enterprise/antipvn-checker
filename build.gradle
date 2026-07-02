@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'com.gradleup.shadow' version '9.0.0-beta12' apply false
+    id 'com.gradleup.shadow' version '9.4.3' apply false
 }
 
 allprojects {
@@ -20,17 +20,19 @@ subprojects {
     compileJava {
         options.encoding = 'UTF-8'
         options.release = 21
+        options.compilerArgs += ['-parameters']
     }
 
     repositories {
         mavenCentral()
         maven { url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
         maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
+        maven { url 'https://central.sonatype.com/repository/maven-snapshots/' }
         maven { url 'https://repo.papermc.io/repository/maven-public/' }
         maven { url 'https://repo.opencollab.dev/main/' }
     }
 
     dependencies {
-        compileOnly 'org.jetbrains:annotations:26.0.2'
+        compileOnly 'org.jetbrains:annotations:26.1.0'
     }
 }

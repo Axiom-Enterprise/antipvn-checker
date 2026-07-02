@@ -1,9 +1,17 @@
 package com.axiom.antivpn.bukkit;
 
 import com.axiom.antivpn.common.AntiVpnEngine;
+import com.axiom.antivpn.common.command.OnlinePlayerNames;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import revxrsal.commands.Lamp;
+import revxrsal.commands.bukkit.BukkitLamp;
+import revxrsal.commands.bukkit.actor.BukkitCommandActor;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class BukkitAntiVpnPlugin extends JavaPlugin {
 
@@ -24,14 +32,23 @@ public final class BukkitAntiVpnPlugin extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new BukkitListener(engine), this);
 
-        var command = getCommand("antivpn");
-        if (command != null) {
-            BukkitCommand cmd = new BukkitCommand(engine);
-            command.setExecutor(cmd);
-            command.setTabCompleter(cmd);
-        }
+        Lamp<BukkitCommandActor> lamp = BukkitLamp.builder(this)
+                .suggestionProviders(suggestions -> suggestions.addProviderForAnnotationLast(
+                        OnlinePlayerNames.class, ann -> context -> onlinePlayerNames()))
+                .exceptionHandler(new BukkitVpnExceptionHandler(engine))
+                .build();
+        lamp.register(new AntiVpnCommand(engine));
+        lamp.register(new VpnWhitelistCommand(engine));
 
         getLogger().info("AxiomAntiVPN enabled on " + platform.getPlatformName());
+    }
+
+    private static List<String> onlinePlayerNames() {
+        List<String> names = new ArrayList<>();
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            names.add(player.getName());
+        }
+        return names;
     }
 
     @Override

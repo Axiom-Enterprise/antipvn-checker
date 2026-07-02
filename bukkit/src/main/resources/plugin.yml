@@ -7,13 +7,6 @@ authors: [Axiom]
 website: https://antivpn.mathsanalysis.com
 softdepend: []
 
-commands:
-  antivpn:
-    description: Axiom AntiVPN management command
-    usage: /antivpn <check|whitelist|status|cache|reload>
-    aliases: [avpn, axiomvpn]
-    permission: antivpn.admin
-
 permissions:
   antivpn.admin:
     description: Access to all AntiVPN commands

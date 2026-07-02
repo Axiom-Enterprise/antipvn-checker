@@ -5,7 +5,9 @@ plugins {
 
 dependencies {
     implementation project(':common')
-    compileOnly 'net.md-5:bungeecord-api:1.21-R0.4-SNAPSHOT'
+    compileOnly 'net.md-5:bungeecord-api:26.1-R0.1-SNAPSHOT'
+    implementation 'io.github.revxrsal:lamp.common:4.0.0-rc.17'
+    implementation 'io.github.revxrsal:lamp.bungee:4.0.0-rc.17'
 }
 
 shadowJar {
@@ -14,9 +16,11 @@ shadowJar {
 
     relocate 'com.github.benmanes.caffeine', 'com.axiom.antivpn.libs.caffeine'
     relocate 'com.google.gson', 'com.axiom.antivpn.libs.gson'
+    relocate 'revxrsal.commands', 'com.axiom.antivpn.libs.lamp'
 
     minimize {
         exclude dependency('com.github.ben-manes.caffeine:.*')
+        exclude dependency('io.github.revxrsal:.*')
     }
 }
 

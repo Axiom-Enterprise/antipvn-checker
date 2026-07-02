@@ -3,7 +3,6 @@ package com.axiom.antivpn.velocity;
 import com.axiom.antivpn.common.platform.Platform;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -12,11 +11,6 @@ import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 
 public final class VelocityPlatform implements Platform {
-
-    private static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.builder()
-            .character('§')
-            .hexColors()
-            .build();
 
     private final @NotNull Object plugin;
     private final @NotNull ProxyServer server;
@@ -52,18 +46,18 @@ public final class VelocityPlatform implements Platform {
     @Override
     public void kickPlayer(@NotNull UUID uuid, @NotNull String message) {
         server.getPlayer(uuid).ifPresent(player ->
-                player.disconnect(SERIALIZER.deserialize(message)));
+                player.disconnect(VelocitySerializer.INSTANCE.deserialize(message)));
     }
 
     @Override
     public void sendMessage(@NotNull UUID uuid, @NotNull String message) {
         server.getPlayer(uuid).ifPresent(player ->
-                player.sendMessage(SERIALIZER.deserialize(message)));
+                player.sendMessage(VelocitySerializer.INSTANCE.deserialize(message)));
     }
 
     @Override
     public void broadcastPermission(@NotNull String permission, @NotNull String message) {
-        var component = SERIALIZER.deserialize(message);
+        var component = VelocitySerializer.INSTANCE.deserialize(message);
         for (Player player : server.getAllPlayers()) {
             if (player.hasPermission(permission)) {
                 player.sendMessage(component);
