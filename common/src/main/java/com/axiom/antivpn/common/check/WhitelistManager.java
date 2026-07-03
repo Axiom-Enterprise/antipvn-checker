@@ -3,6 +3,8 @@ package com.axiom.antivpn.common.check;
 import com.axiom.antivpn.common.config.PluginConfig;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -103,14 +105,13 @@ public final class WhitelistManager {
     }
 
     private void save() {
-        config.set("whitelist.ips", ips.toArray(new String[0]));
-        String[] uuids = new String[players.size()];
-        int i = 0;
+        config.set("whitelist.ips", List.copyOf(ips));
+        List<String> uuids = new ArrayList<>(players.size());
         for (UUID uuid : players) {
-            uuids[i++] = uuid.toString();
+            uuids.add(uuid.toString());
         }
         config.set("whitelist.players", uuids);
-        config.set("whitelist.player-names", names.toArray(new String[0]));
+        config.set("whitelist.player-names", List.copyOf(names));
         config.save();
     }
 
