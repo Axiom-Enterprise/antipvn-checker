@@ -68,8 +68,8 @@ public final class VpnWhitelistCommand {
                 return;
             }
             boolean changed = action.equals("add")
-                    ? engine.getWhitelist().addPlayer(uuid)
-                    : engine.getWhitelist().removePlayer(uuid);
+                    ? engine.getWhitelist().addPlayer(uuid, target)
+                    : engine.getWhitelist().removePlayer(uuid, target);
             sendResult(actor, messages, action, target, changed);
         }).exceptionally(ex -> {
             reply(actor, messages.format("{prefix}&cFailed to resolve player: " + ex.getMessage()));

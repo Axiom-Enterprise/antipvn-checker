@@ -38,7 +38,7 @@ public final class VelocityListener {
             return;
         }
 
-        if (engine.getWhitelist().isIpWhitelisted(ip)) {
+        if (engine.getWhitelist().isIpWhitelisted(ip) || engine.getWhitelist().isPlayerNameWhitelisted(event.getUsername())) {
             continuation.resume();
             return;
         }

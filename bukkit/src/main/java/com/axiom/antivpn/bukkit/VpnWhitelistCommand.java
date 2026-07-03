@@ -50,8 +50,8 @@ public final class VpnWhitelistCommand {
         }
 
         boolean changed = action.equals("add")
-                ? engine.getWhitelist().addPlayer(player.getUniqueId())
-                : engine.getWhitelist().removePlayer(player.getUniqueId());
+                ? engine.getWhitelist().addPlayer(player.getUniqueId(), target)
+                : engine.getWhitelist().removePlayer(player.getUniqueId(), target);
         reply(actor, messages, action, target, changed);
     }
 
