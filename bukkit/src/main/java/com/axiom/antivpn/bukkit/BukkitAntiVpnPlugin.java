@@ -38,7 +38,6 @@ public final class BukkitAntiVpnPlugin extends JavaPlugin {
                 .exceptionHandler(new BukkitVpnExceptionHandler(engine))
                 .build();
         lamp.register(new AntiVpnCommand(engine));
-        lamp.register(new VpnWhitelistCommand(engine));
 
         getLogger().info("AxiomAntiVPN enabled on " + platform.getPlatformName());
     }

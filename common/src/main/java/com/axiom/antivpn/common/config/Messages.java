@@ -15,6 +15,11 @@ public final class Messages {
     private String whitelistRemove;
     private String whitelistAlready;
     private String whitelistNotFound;
+    private String whitelistListEmpty;
+    private String whitelistListIpsHeader;
+    private String whitelistListIpEntry;
+    private String whitelistListPlayersHeader;
+    private String whitelistListPlayerEntry;
     private String reloadSuccess;
     private String noPermission;
     private String playerNotFound;
@@ -41,6 +46,11 @@ public final class Messages {
         this.whitelistRemove = raw("whitelist-remove", "{prefix}&c{target} &7has been removed from the whitelist.");
         this.whitelistAlready = raw("whitelist-already", "{prefix}&e{target} &7is already whitelisted.");
         this.whitelistNotFound = raw("whitelist-not-found", "{prefix}&c{target} &7is not whitelisted.");
+        this.whitelistListEmpty = raw("whitelist-list-empty", "{prefix}&7Whitelist is empty.");
+        this.whitelistListIpsHeader = raw("whitelist-list-ips-header", "{prefix}&7Whitelisted IPs (&f{count}&7):");
+        this.whitelistListIpEntry = raw("whitelist-list-ip-entry", "&8 - &f{ip}");
+        this.whitelistListPlayersHeader = raw("whitelist-list-players-header", "{prefix}&7Whitelisted players (&f{count}&7):");
+        this.whitelistListPlayerEntry = raw("whitelist-list-player-entry", "&8 - &f{name} &7({uuid})");
         this.reloadSuccess = raw("reload-success", "{prefix}&aConfiguration reloaded successfully.");
         this.noPermission = raw("no-permission", "{prefix}&cYou do not have permission to use this command.");
         this.playerNotFound = raw("player-not-found", "{prefix}&cPlayer not found.");
@@ -51,7 +61,7 @@ public final class Messages {
         this.cacheCleared = raw("cache-cleared", "{prefix}&aCache has been cleared. &7({size} entries removed)");
         this.statusOnline = raw("status-online", "{prefix}&aAPI Status: &2ONLINE &8| &7Latency: &a{latency}ms");
         this.statusOffline = raw("status-offline", "{prefix}&cAPI Status: &4OFFLINE");
-        this.usageHelp = raw("usage-help", "{prefix}&eUsage:\n&7/antivpn check <ip> &8- &7Check an IP\n&7/antivpn whitelist add <ip|player> &8- &7Whitelist\n&7/antivpn whitelist remove <ip|player> &8- &7Remove whitelist\n&7/antivpn status &8- &7API status\n&7/antivpn cache clear &8- &7Clear cache\n&7/antivpn reload &8- &7Reload config");
+        this.usageHelp = raw("usage-help", "{prefix}&eUsage:\n&7/vpn check <ip> &8- &7Check an IP\n&7/vpn whitelist add <ip|player> &8- &7Whitelist\n&7/vpn whitelist remove <ip|player> &8- &7Remove whitelist\n&7/vpn whitelist list &8- &7List whitelist\n&7/vpn status &8- &7API status\n&7/vpn cache clear &8- &7Clear cache\n&7/vpn reload &8- &7Reload config");
         this.apiKeyMissing = raw("api-key-missing", "{prefix}&cAPI key is not configured! Set it in config.yml");
     }
 
@@ -102,6 +112,11 @@ public final class Messages {
     public @NotNull String getWhitelistRemove() { return whitelistRemove; }
     public @NotNull String getWhitelistAlready() { return whitelistAlready; }
     public @NotNull String getWhitelistNotFound() { return whitelistNotFound; }
+    public @NotNull String getWhitelistListEmpty() { return whitelistListEmpty; }
+    public @NotNull String getWhitelistListIpsHeader() { return whitelistListIpsHeader; }
+    public @NotNull String getWhitelistListIpEntry() { return whitelistListIpEntry; }
+    public @NotNull String getWhitelistListPlayersHeader() { return whitelistListPlayersHeader; }
+    public @NotNull String getWhitelistListPlayerEntry() { return whitelistListPlayerEntry; }
     public @NotNull String getReloadSuccess() { return reloadSuccess; }
     public @NotNull String getNoPermission() { return noPermission; }
     public @NotNull String getPlayerNotFound() { return playerNotFound; }

@@ -1,10 +1,8 @@
 package com.axiom.antivpn.common.check;
 
-import com.axiom.antivpn.common.config.PluginConfig;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -12,31 +10,22 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class WhitelistManager {
 
     private final Set<String> ips = ConcurrentHashMap.newKeySet();
-    private final Set<UUID> players = ConcurrentHashMap.newKeySet();
-    private final Set<String> names = ConcurrentHashMap.newKeySet();
-    private final @NotNull PluginConfig config;
+    private final Map<UUID, String> players = new ConcurrentHashMap<>();
+    private final @NotNull WhitelistStorage storage;
 
-    public WhitelistManager(@NotNull PluginConfig config) {
-        this.config = config;
+    public WhitelistManager(@NotNull WhitelistStorage storage) {
+        this.storage = storage;
         load();
     }
 
     public void load() {
         ips.clear();
         players.clear();
-        names.clear();
-        for (String ip : config.getStringList("whitelist.ips")) {
+        for (String ip : storage.loadIps()) {
             ips.add(ip.toLowerCase());
         }
-        for (String uuid : config.getStringList("whitelist.players")) {
-            try {
-                players.add(UUID.fromString(uuid));
-            } catch (IllegalArgumentException ignored) {
-                ips.add(uuid.toLowerCase());
-            }
-        }
-        for (String name : config.getStringList("whitelist.player-names")) {
-            names.add(name.toLowerCase());
+        for (Map.Entry<UUID, String> entry : storage.loadPlayers().entrySet()) {
+            players.put(entry.getKey(), entry.getValue() != null ? entry.getValue() : "");
         }
     }
 
@@ -45,81 +34,71 @@ public final class WhitelistManager {
     }
 
     public boolean isPlayerWhitelisted(@NotNull UUID uuid) {
-        return players.contains(uuid);
+        return players.containsKey(uuid);
     }
 
     public boolean isPlayerNameWhitelisted(@NotNull String name) {
-        return names.contains(name.toLowerCase());
+        for (String whitelistedName : players.values()) {
+            if (whitelistedName.equalsIgnoreCase(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean addIp(@NotNull String ip) {
-        if (!ips.add(ip.toLowerCase())) {
+        String lower = ip.toLowerCase();
+        if (!ips.add(lower)) {
             return false;
         }
-        save();
+        storage.addIp(lower);
         return true;
     }
 
     public boolean addPlayer(@NotNull UUID uuid) {
-        if (!players.add(uuid)) {
+        if (players.putIfAbsent(uuid, "") != null) {
             return false;
         }
-        save();
+        storage.addPlayer(uuid, null);
         return true;
     }
 
     public boolean addPlayer(@NotNull UUID uuid, @NotNull String name) {
-        boolean changed = players.add(uuid);
-        changed |= names.add(name.toLowerCase());
-        if (!changed) {
+        String lowerName = name.toLowerCase();
+        String previous = players.put(uuid, lowerName);
+        if (lowerName.equals(previous)) {
             return false;
         }
-        save();
+        storage.addPlayer(uuid, lowerName);
         return true;
     }
 
     public boolean removeIp(@NotNull String ip) {
-        if (!ips.remove(ip.toLowerCase())) {
+        String lower = ip.toLowerCase();
+        if (!ips.remove(lower)) {
             return false;
         }
-        save();
+        storage.removeIp(lower);
         return true;
     }
 
     public boolean removePlayer(@NotNull UUID uuid) {
-        if (!players.remove(uuid)) {
+        if (players.remove(uuid) == null) {
             return false;
         }
-        save();
+        storage.removePlayer(uuid);
         return true;
     }
 
     public boolean removePlayer(@NotNull UUID uuid, @NotNull String name) {
-        boolean changed = players.remove(uuid);
-        changed |= names.remove(name.toLowerCase());
-        if (!changed) {
-            return false;
-        }
-        save();
-        return true;
-    }
-
-    private void save() {
-        config.set("whitelist.ips", List.copyOf(ips));
-        List<String> uuids = new ArrayList<>(players.size());
-        for (UUID uuid : players) {
-            uuids.add(uuid.toString());
-        }
-        config.set("whitelist.players", uuids);
-        config.set("whitelist.player-names", List.copyOf(names));
-        config.save();
+        return removePlayer(uuid);
     }
 
     public @NotNull Set<String> getWhitelistedIps() {
         return Set.copyOf(ips);
     }
 
-    public @NotNull Set<UUID> getWhitelistedPlayers() {
-        return Set.copyOf(players);
+    public @NotNull Map<UUID, String> getWhitelistedPlayers() {
+        return Map.copyOf(players);
     }
 }

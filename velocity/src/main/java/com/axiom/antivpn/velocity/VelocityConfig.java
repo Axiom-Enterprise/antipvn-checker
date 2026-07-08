@@ -126,7 +126,11 @@ public final class VelocityConfig implements PluginConfig {
                 current = newMap;
             }
         }
-        current.put(parts[parts.length - 1], value);
+        if (value == null) {
+            current.remove(parts[parts.length - 1]);
+        } else {
+            current.put(parts[parts.length - 1], value);
+        }
     }
 
     @Override

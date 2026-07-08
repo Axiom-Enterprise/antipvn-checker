@@ -24,8 +24,6 @@ public final class Settings {
     private long cacheTtlSeconds;
     private long cacheMaxSize;
 
-    private List<String> whitelistedIps;
-    private List<String> whitelistedPlayers;
     private List<String> whitelistedCountries;
 
     private boolean alertsEnabled;
@@ -59,8 +57,6 @@ public final class Settings {
         this.cacheTtlSeconds = config.getLong("cache.ttl-seconds", 600);
         this.cacheMaxSize = config.getLong("cache.max-size", 10000);
 
-        this.whitelistedIps = config.getStringList("whitelist.ips");
-        this.whitelistedPlayers = config.getStringList("whitelist.players");
         this.whitelistedCountries = config.getStringList("whitelist.countries");
 
         this.alertsEnabled = config.getBoolean("alerts.enabled", true);
@@ -83,8 +79,6 @@ public final class Settings {
     public long getCacheTtlSeconds() { return cacheTtlSeconds; }
     public long getCacheMaxSize() { return cacheMaxSize; }
 
-    public @NotNull List<String> getWhitelistedIps() { return whitelistedIps; }
-    public @NotNull List<String> getWhitelistedPlayers() { return whitelistedPlayers; }
     public @NotNull List<String> getWhitelistedCountries() { return whitelistedCountries; }
 
     public boolean isAlertsEnabled() { return alertsEnabled; }

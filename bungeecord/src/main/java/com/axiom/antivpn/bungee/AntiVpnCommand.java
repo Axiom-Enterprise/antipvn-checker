@@ -1,8 +1,11 @@
 package com.axiom.antivpn.bungee;
 
 import com.axiom.antivpn.common.AntiVpnEngine;
+import com.axiom.antivpn.common.command.OnlinePlayerNames;
 import com.axiom.antivpn.common.config.Messages;
 import com.axiom.antivpn.common.util.IpUtil;
+import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import revxrsal.commands.annotation.Command;
@@ -11,8 +14,11 @@ import revxrsal.commands.bungee.actor.BungeeCommandActor;
 import revxrsal.commands.bungee.annotation.CommandPermission;
 
 import java.io.File;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
-@Command({"antivpn", "avpn", "axiomvpn"})
+@Command("vpn")
 @CommandPermission("antivpn.admin")
 public final class AntiVpnCommand {
 
@@ -22,7 +28,7 @@ public final class AntiVpnCommand {
         this.engine = engine;
     }
 
-    @Command({"antivpn", "avpn", "axiomvpn"})
+    @Command("vpn")
     public void usage(@NotNull BungeeCommandActor actor) {
         Messages messages = engine.getMessages();
         actor.reply(messages.format(messages.getUsageHelp()));
@@ -81,5 +87,72 @@ public final class AntiVpnCommand {
         BungeeConfig messagesConfig = new BungeeConfig(new File(plugin.getDataFolder(), "messages.yml"), plugin.getLogger());
         engine.reload(mainConfig, messagesConfig);
         actor.reply(messages.format(messages.getReloadSuccess()));
+    }
+
+    @Subcommand("whitelist add")
+    public void whitelistAdd(@NotNull BungeeCommandActor actor, @OnlinePlayerNames @NotNull String target) {
+        whitelistApply(actor, "add", target);
+    }
+
+    @Subcommand("whitelist remove")
+    public void whitelistRemove(@NotNull BungeeCommandActor actor, @OnlinePlayerNames @NotNull String target) {
+        whitelistApply(actor, "remove", target);
+    }
+
+    @Subcommand("whitelist list")
+    public void whitelistList(@NotNull BungeeCommandActor actor) {
+        Messages messages = engine.getMessages();
+        Set<String> ips = engine.getWhitelist().getWhitelistedIps();
+        Map<UUID, String> players = engine.getWhitelist().getWhitelistedPlayers();
+
+        if (ips.isEmpty() && players.isEmpty()) {
+            actor.reply(messages.format(messages.getWhitelistListEmpty()));
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(messages.getWhitelistListIpsHeader().replace("{count}", String.valueOf(ips.size())));
+        for (String ip : ips) {
+            sb.append('\n').append(messages.getWhitelistListIpEntry().replace("{ip}", ip));
+        }
+        sb.append('\n').append(messages.getWhitelistListPlayersHeader().replace("{count}", String.valueOf(players.size())));
+        for (Map.Entry<UUID, String> entry : players.entrySet()) {
+            String name = entry.getValue().isEmpty() ? "?" : entry.getValue();
+            sb.append('\n').append(messages.getWhitelistListPlayerEntry()
+                    .replace("{name}", name)
+                    .replace("{uuid}", entry.getKey().toString()));
+        }
+        actor.reply(messages.format(sb.toString()));
+    }
+
+    private void whitelistApply(@NotNull BungeeCommandActor actor, @NotNull String action, @NotNull String target) {
+        Messages messages = engine.getMessages();
+
+        if (IpUtil.isValidIp(target)) {
+            boolean changed = action.equals("add")
+                    ? engine.getWhitelist().addIp(target)
+                    : engine.getWhitelist().removeIp(target);
+            whitelistReply(actor, messages, action, target, changed);
+            return;
+        }
+
+        ProxiedPlayer player = ProxyServer.getInstance().getPlayer(target);
+        if (player == null) {
+            actor.reply(messages.format(messages.getPlayerNotFound()));
+            return;
+        }
+
+        boolean changed = action.equals("add")
+                ? engine.getWhitelist().addPlayer(player.getUniqueId(), target)
+                : engine.getWhitelist().removePlayer(player.getUniqueId(), target);
+        whitelistReply(actor, messages, action, target, changed);
+    }
+
+    private void whitelistReply(@NotNull BungeeCommandActor actor, @NotNull Messages messages, @NotNull String action, @NotNull String target, boolean changed) {
+        if (action.equals("add")) {
+            actor.reply(messages.formatWith(changed ? messages.getWhitelistAdd() : messages.getWhitelistAlready(), "{target}", target));
+        } else {
+            actor.reply(messages.formatWith(changed ? messages.getWhitelistRemove() : messages.getWhitelistNotFound(), "{target}", target));
+        }
     }
 }

@@ -41,7 +41,6 @@ public final class BungeeAntiVpnPlugin extends Plugin {
                 .exceptionHandler(new BungeeVpnExceptionHandler(engine))
                 .build();
         lamp.register(new AntiVpnCommand(engine));
-        lamp.register(new VpnWhitelistCommand(engine));
 
         getLogger().info("AxiomAntiVPN enabled on " + platform.getPlatformName());
     }

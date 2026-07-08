@@ -41,14 +41,9 @@ cache:
 
 
 whitelist:
-  # Whitelisted IP addresses (bypasses VPN check)
-  ips: []
-
-  # Whitelisted player UUIDs (bypasses VPN check)
-  players: []
-
   # Whitelisted country codes (ISO 3166-1 alpha-2)
   # Players from these countries will not be blocked
+  # IP and player whitelist entries are managed via /vpn whitelist and stored in whitelist.db
   countries: []
 
 alerts:

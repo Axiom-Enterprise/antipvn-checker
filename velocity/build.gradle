@@ -23,6 +23,7 @@ shadowJar {
     minimize {
         exclude dependency('com.github.ben-manes.caffeine:.*')
         exclude dependency('io.github.revxrsal:.*')
+        exclude dependency('org.xerial:sqlite-jdbc:.*')
     }
 }
 

@@ -9,6 +9,7 @@ import com.axiom.antivpn.api.model.DetectionType;
 import com.axiom.antivpn.api.model.VpnResponse;
 import com.axiom.antivpn.common.cache.VpnCache;
 import com.axiom.antivpn.common.check.WhitelistManager;
+import com.axiom.antivpn.common.check.WhitelistStorage;
 import com.axiom.antivpn.common.config.Messages;
 import com.axiom.antivpn.common.config.PluginConfig;
 import com.axiom.antivpn.common.config.Settings;
@@ -20,6 +21,7 @@ import com.google.gson.JsonObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -33,6 +35,7 @@ public final class AntiVpnEngine implements AntiVpnAPI {
     private final @NotNull Settings settings;
     private final @NotNull Messages messages;
     private final @NotNull VpnCache cache;
+    private final @NotNull WhitelistStorage whitelistStorage;
     private final @NotNull WhitelistManager whitelist;
     private final @NotNull HttpClient httpClient;
 
@@ -41,10 +44,44 @@ public final class AntiVpnEngine implements AntiVpnAPI {
         this.settings = new Settings(mainConfig);
         this.messages = new Messages(messagesConfig);
         this.cache = new VpnCache(settings);
-        this.whitelist = new WhitelistManager(mainConfig);
+        this.whitelistStorage = new WhitelistStorage(platform.getDataFolder(), platform.getPluginLogger());
+        migrateLegacyWhitelist(mainConfig, whitelistStorage);
+        this.whitelist = new WhitelistManager(whitelistStorage);
         this.httpClient = new HttpClient(settings, platform.getAsyncExecutor(), platform.getPluginLogger());
 
         AntiVpnProvider.register(this);
+    }
+
+    private static void migrateLegacyWhitelist(@NotNull PluginConfig mainConfig, @NotNull WhitelistStorage storage) {
+        if (!mainConfig.contains("whitelist.ips") && !mainConfig.contains("whitelist.players")) {
+            return;
+        }
+
+        for (String ip : mainConfig.getStringList("whitelist.ips")) {
+            storage.addIp(ip.toLowerCase(Locale.ROOT));
+        }
+
+        List<String> names = mainConfig.getStringList("whitelist.player-names");
+        List<UUID> uuids = new ArrayList<>();
+        for (String raw : mainConfig.getStringList("whitelist.players")) {
+            try {
+                uuids.add(UUID.fromString(raw));
+            } catch (IllegalArgumentException ignored) {
+                storage.addIp(raw.toLowerCase(Locale.ROOT));
+            }
+        }
+        // Old config stored UUIDs and names as two independent lists; pair them by
+        // index since that's how they were always added together (addPlayer(uuid, name)).
+        for (int i = 0; i < uuids.size(); i++) {
+            String name = i < names.size() ? names.get(i) : null;
+            storage.addPlayer(uuids.get(i), name);
+        }
+
+        // "whitelist.countries" is unrelated (country-code allowlist) and stays in the config.
+        mainConfig.set("whitelist.ips", null);
+        mainConfig.set("whitelist.players", null);
+        mainConfig.set("whitelist.player-names", null);
+        mainConfig.save();
     }
 
     @Override
@@ -230,6 +267,7 @@ public final class AntiVpnEngine implements AntiVpnAPI {
         EventBus.get().clear();
         httpClient.shutdown();
         cache.clear();
+        whitelistStorage.close();
     }
 
     public @NotNull Settings getSettings() { return settings; }

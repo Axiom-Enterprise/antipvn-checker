@@ -69,8 +69,7 @@ public final class VelocityAntiVpnPlugin {
                         OnlinePlayerNames.class, ann -> context -> onlinePlayerNames()))
                 .exceptionHandler(new VelocityVpnExceptionHandler(engine))
                 .build();
-        lamp.register(new AntiVpnCommand(engine));
-        lamp.register(new VpnWhitelistCommand(engine, server));
+        lamp.register(new AntiVpnCommand(engine, server));
         lamp.accept(VelocityVisitors.brigadier(server));
 
         logger.info("AxiomAntiVPN enabled on Velocity");
