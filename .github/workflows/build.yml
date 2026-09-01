@@ -28,11 +28,25 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Resolve build version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" == v* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          elif [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            VERSION="1.0.2-pr.${{ github.event.pull_request.number }}.${GITHUB_RUN_NUMBER}"
+          else
+            VERSION="1.0.2-build.${GITHUB_RUN_NUMBER}"
+          fi
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "Building AxiomAntiVPN ${VERSION}"
+
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
       - name: Build all platforms
-        run: ./gradlew clean build --no-daemon
+        run: ./gradlew clean build --no-daemon -PbuildVersion="${{ steps.version.outputs.version }}"
 
       - name: Collect artifacts
         run: |
@@ -46,28 +60,28 @@ jobs:
       - name: Upload Bukkit artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AxiomAntiVPN-Bukkit
+          name: AxiomAntiVPN-Bukkit-${{ steps.version.outputs.version }}
           path: bukkit/build/libs/AxiomAntiVPN-Bukkit-*.jar
           if-no-files-found: error
 
       - name: Upload Bungee artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AxiomAntiVPN-Bungee
+          name: AxiomAntiVPN-BungeeCord-${{ steps.version.outputs.version }}
           path: bungeecord/build/libs/AxiomAntiVPN-BungeeCord*.jar
           if-no-files-found: error
 
       - name: Upload Velocity artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AxiomAntiVPN-Velocity
+          name: AxiomAntiVPN-Velocity-${{ steps.version.outputs.version }}
           path: velocity/build/libs/AxiomAntiVPN-Velocity*.jar
           if-no-files-found: error
 
       - name: Upload API artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AxiomAntiVPN-API
+          name: AxiomAntiVPN-API-${{ steps.version.outputs.version }}
           path: api/build/libs/*.jar
           if-no-files-found: warn
 

@@ -5,7 +5,10 @@ plugins {
 
 allprojects {
     group = 'com.axiom.antivpn'
-    version = '1.0.2'
+    version = providers.gradleProperty('buildVersion')
+            .orElse(providers.environmentVariable('BUILD_VERSION'))
+            .orElse('1.0.2')
+            .get()
 }
 
 subprojects {

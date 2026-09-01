@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 @Plugin(
         id = "axiomantivpn",
         name = "AxiomAntiVPN",
-        version = "1.0.2",
+        version = BuildVersion.VALUE,
         description = "Advanced VPN & Proxy Detection powered by Axiom AntiVPN API",
         authors = {"Axiom"}
 )

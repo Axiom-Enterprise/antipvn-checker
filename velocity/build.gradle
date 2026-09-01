@@ -12,6 +12,19 @@ dependencies {
     implementation 'io.github.revxrsal:lamp.brigadier:4.0.0-rc.18'
 }
 
+def generatedVersionDir = layout.buildDirectory.dir('generated/sources/version')
+def generateVersionSource = tasks.register('generateVersionSource') {
+    outputs.dir(generatedVersionDir)
+    doLast {
+        def output = generatedVersionDir.get().asFile.toPath().resolve('com/axiom/antivpn/velocity/BuildVersion.java')
+        output.toFile().parentFile.mkdirs()
+        output.toFile().text = "package com.axiom.antivpn.velocity;\n\npublic final class BuildVersion {\n    public static final String VALUE = \"${project.version}\";\n\n    private BuildVersion() { }\n}\n"
+    }
+}
+
+sourceSets.main.java.srcDir(generatedVersionDir)
+tasks.named('compileJava') { dependsOn(generateVersionSource) }
+
 shadowJar {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
     archiveClassifier.set('')
