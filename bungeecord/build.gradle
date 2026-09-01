@@ -6,17 +6,19 @@ plugins {
 dependencies {
     implementation project(':common')
     compileOnly 'net.md-5:bungeecord-api:26.1-R0.1-SNAPSHOT'
-    implementation 'io.github.revxrsal:lamp.common:4.0.0-rc.17'
-    implementation 'io.github.revxrsal:lamp.bungee:4.0.0-rc.17'
+    implementation 'io.github.revxrsal:lamp.common:4.0.0-rc.18'
+    implementation 'io.github.revxrsal:lamp.bungee:4.0.0-rc.18'
 }
 
 shadowJar {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     archiveClassifier.set('')
     archiveBaseName.set('AxiomAntiVPN-BungeeCord')
 
     relocate 'com.github.benmanes.caffeine', 'com.axiom.antivpn.libs.caffeine'
     relocate 'com.google.gson', 'com.axiom.antivpn.libs.gson'
     relocate 'revxrsal.commands', 'com.axiom.antivpn.libs.lamp'
+    relocate 'net.kyori.adventure.text.minimessage', 'com.axiom.antivpn.libs.minimessage'
 
     minimize {
         exclude dependency('com.github.ben-manes.caffeine:.*')
@@ -26,3 +28,8 @@ shadowJar {
 }
 
 build.dependsOn shadowJar
+
+processResources {
+    def pluginVersion = version
+    filesMatching('bungee.yml') { expand(version: pluginVersion) }
+}

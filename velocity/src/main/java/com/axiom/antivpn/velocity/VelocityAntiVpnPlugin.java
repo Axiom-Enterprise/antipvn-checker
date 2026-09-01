@@ -10,6 +10,7 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import revxrsal.commands.Lamp;
 import revxrsal.commands.velocity.VelocityLamp;
 import revxrsal.commands.velocity.VelocityVisitors;
@@ -26,11 +27,12 @@ import java.util.logging.Logger;
 @Plugin(
         id = "axiomantivpn",
         name = "AxiomAntiVPN",
-        version = "1.0.0",
+        version = "1.0.2",
         description = "Advanced VPN & Proxy Detection powered by Axiom AntiVPN API",
         authors = {"Axiom"}
 )
 public final class VelocityAntiVpnPlugin {
+    public static final MinecraftChannelIdentifier DECISION_CHANNEL = MinecraftChannelIdentifier.from("axiomantivpn:decision");
 
     private final ProxyServer server;
     private final Logger logger;
@@ -46,6 +48,7 @@ public final class VelocityAntiVpnPlugin {
 
     @Subscribe
     public void onProxyInitialize(ProxyInitializeEvent event) {
+        server.getChannelRegistrar().register(DECISION_CHANNEL);
         try {
             Files.createDirectories(dataFolder);
         } catch (IOException e) {
@@ -85,6 +88,7 @@ public final class VelocityAntiVpnPlugin {
 
     @Subscribe
     public void onProxyShutdown(ProxyShutdownEvent event) {
+        server.getChannelRegistrar().unregister(DECISION_CHANNEL);
         if (engine != null) {
             engine.shutdown();
         }

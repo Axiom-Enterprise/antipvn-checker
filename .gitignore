@@ -23,6 +23,7 @@ out/
 .factorypath
 .project
 .settings
+docs/
 .springBeans
 .sts4-cache
 bin/

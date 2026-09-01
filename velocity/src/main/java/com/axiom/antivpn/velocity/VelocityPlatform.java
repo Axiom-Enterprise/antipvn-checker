@@ -66,6 +66,11 @@ public final class VelocityPlatform implements Platform {
     }
 
     @Override
+    public void dispatchConsoleCommand(@NotNull String command) {
+        server.getCommandManager().executeAsync(server.getConsoleCommandSource(), command);
+    }
+
+    @Override
     public boolean isPlayerOnline(@NotNull UUID uuid) {
         return server.getPlayer(uuid).isPresent();
     }

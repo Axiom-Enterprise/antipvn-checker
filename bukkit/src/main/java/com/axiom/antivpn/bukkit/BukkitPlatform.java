@@ -64,6 +64,11 @@ public final class BukkitPlatform implements Platform {
     }
 
     @Override
+    public void dispatchConsoleCommand(@NotNull String command) {
+        runSync(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command));
+    }
+
+    @Override
     public boolean isPlayerOnline(@NotNull UUID uuid) {
         return Bukkit.getPlayer(uuid) != null;
     }

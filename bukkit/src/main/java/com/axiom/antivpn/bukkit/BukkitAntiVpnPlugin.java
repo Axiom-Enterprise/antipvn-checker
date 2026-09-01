@@ -2,6 +2,7 @@ package com.axiom.antivpn.bukkit;
 
 import com.axiom.antivpn.common.AntiVpnEngine;
 import com.axiom.antivpn.common.command.OnlinePlayerNames;
+import com.axiom.antivpn.bukkit.integration.AntiVpnPlaceholderExpansion;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -30,7 +31,12 @@ public final class BukkitAntiVpnPlugin extends JavaPlugin {
 
         engine = new AntiVpnEngine(platform, mainConfig, messagesConfig);
 
+        if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            new AntiVpnPlaceholderExpansion(engine).register();
+        }
+
         getServer().getPluginManager().registerEvents(new BukkitListener(engine), this);
+        getServer().getMessenger().registerIncomingPluginChannel(this, "axiomantivpn:decision", new NetworkDecisionReceiver(engine));
 
         Lamp<BukkitCommandActor> lamp = BukkitLamp.builder(this)
                 .suggestionProviders(suggestions -> suggestions.addProviderForAnnotationLast(

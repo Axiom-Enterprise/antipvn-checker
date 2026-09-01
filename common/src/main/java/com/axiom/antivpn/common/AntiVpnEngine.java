@@ -5,7 +5,6 @@ import com.axiom.antivpn.api.AntiVpnProvider;
 import com.axiom.antivpn.api.event.EventBus;
 import com.axiom.antivpn.api.event.IpCheckEvent;
 import com.axiom.antivpn.api.model.ApiStatus;
-import com.axiom.antivpn.api.model.DetectionType;
 import com.axiom.antivpn.api.model.VpnResponse;
 import com.axiom.antivpn.common.cache.VpnCache;
 import com.axiom.antivpn.common.check.WhitelistManager;
@@ -16,6 +15,18 @@ import com.axiom.antivpn.common.config.Settings;
 import com.axiom.antivpn.common.http.HttpClient;
 import com.axiom.antivpn.common.http.ResponseParser;
 import com.axiom.antivpn.common.platform.Platform;
+import com.axiom.antivpn.common.network.NetworkDecision;
+import com.axiom.antivpn.common.policy.CommandTemplate;
+import com.axiom.antivpn.common.policy.DetectionPolicy;
+import com.axiom.antivpn.common.policy.EnforcementAction;
+import com.axiom.antivpn.common.policy.PolicyDecision;
+import com.axiom.antivpn.common.telemetry.CheckRecord;
+import com.axiom.antivpn.common.telemetry.StatsSnapshot;
+import com.axiom.antivpn.common.telemetry.TelemetryStorage;
+import com.axiom.antivpn.common.telemetry.TelemetryFormatter;
+import com.axiom.antivpn.common.webhook.DiscordWebhookNotifier;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.jetbrains.annotations.NotNull;
@@ -27,6 +38,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 public final class AntiVpnEngine implements AntiVpnAPI {
@@ -38,6 +50,11 @@ public final class AntiVpnEngine implements AntiVpnAPI {
     private final @NotNull WhitelistStorage whitelistStorage;
     private final @NotNull WhitelistManager whitelist;
     private final @NotNull HttpClient httpClient;
+    private final @NotNull DetectionPolicy policy;
+    private final @NotNull TelemetryStorage telemetry;
+    private final @NotNull DiscordWebhookNotifier webhook;
+    private final @NotNull Cache<UUID, VpnResponse> lastResults;
+    private final @NotNull TelemetryFormatter telemetryFormatter = new TelemetryFormatter();
 
     public AntiVpnEngine(@NotNull Platform platform, @NotNull PluginConfig mainConfig, @NotNull PluginConfig messagesConfig) {
         this.platform = platform;
@@ -48,6 +65,12 @@ public final class AntiVpnEngine implements AntiVpnAPI {
         migrateLegacyWhitelist(mainConfig, whitelistStorage);
         this.whitelist = new WhitelistManager(whitelistStorage);
         this.httpClient = new HttpClient(settings, platform.getAsyncExecutor(), platform.getPluginLogger());
+        this.policy = new DetectionPolicy(settings);
+        this.telemetry = new TelemetryStorage(platform.getDataFolder(), platform.getPluginLogger(), settings.getHistoryMaxRows());
+        this.telemetry.purgeOlderThan(java.time.Duration.ofDays(settings.getHistoryRetentionDays()));
+        this.webhook = new DiscordWebhookNotifier(settings, java.net.http.HttpClient.newBuilder()
+                .executor(platform.getAsyncExecutor()).connectTimeout(java.time.Duration.ofSeconds(5)).build(), platform.getPluginLogger());
+        this.lastResults = Caffeine.newBuilder().maximumSize(10000).expireAfterWrite(30, TimeUnit.MINUTES).build();
 
         AntiVpnProvider.register(this);
     }
@@ -88,7 +111,7 @@ public final class AntiVpnEngine implements AntiVpnAPI {
     public @NotNull CompletableFuture<VpnResponse> checkIp(@NotNull String ip) {
         VpnResponse cached = cache.get(ip);
         if (cached != null) {
-            return CompletableFuture.completedFuture(cached);
+            return CompletableFuture.completedFuture(cached.withCached(true));
         }
 
         return httpClient.getAsync("/check/" + ip).thenApply(json -> {
@@ -175,9 +198,15 @@ public final class AntiVpnEngine implements AntiVpnAPI {
         }
 
         return checkIp(ip)
-                .thenAccept(response -> handleCheckResult(uuid, name, ip, response))
+                .thenAccept(response -> {
+                    PolicyDecision decision = processCheck(uuid, name, ip, response);
+                    if (decision.action() == EnforcementAction.KICK) {
+                        platform.kickPlayer(uuid, messages.format(messages.getKickMessage(), response));
+                    }
+                })
                 .exceptionally(ex -> {
-                    platform.getPluginLogger().log(Level.WARNING, "Failed to check IP " + ip + " for " + name + ": " + ex.getMessage());
+                    platform.getPluginLogger().log(Level.WARNING, "Failed to check IP for " + name + ": " + ex.getClass().getSimpleName());
+                    recordFailure(uuid, name, ip);
                     if (settings.isBlockOnApiFailure()) {
                         platform.kickPlayer(uuid, messages.format(messages.getKickMessage()));
                     }
@@ -185,52 +214,34 @@ public final class AntiVpnEngine implements AntiVpnAPI {
                 });
     }
 
-    private void handleCheckResult(@NotNull UUID uuid, @NotNull String name,
-                                   @NotNull String ip, @NotNull VpnResponse response) {
+    public @NotNull PolicyDecision processCheck(@Nullable UUID uuid, @NotNull String name,
+                                                @NotNull String ip, @NotNull VpnResponse response) {
         IpCheckEvent event = new IpCheckEvent(ip, uuid, name, response);
         EventBus.get().fire(event);
         if (event.isCancelled()) {
-            return;
+            return PolicyDecision.allow("event-cancelled");
         }
-
-        if (!shouldBlock(response)) {
-            return;
+        PolicyDecision decision = policy.evaluate(response);
+        if (uuid != null) lastResults.put(uuid, response);
+        if (settings.isHistoryEnabled()) {
+            telemetry.record(new CheckRecord(System.currentTimeMillis(), uuid, name, ip, response.countryCode(),
+                    decision.reason(), response.riskScore(), decision.action(), decision.matched(), response.cached(), false));
         }
-
-        String kickMsg = messages.format(messages.getKickMessage(), response);
-        platform.kickPlayer(uuid, kickMsg);
-
-        if (settings.isAlertsEnabled()) {
-            String alertMsg = messages.format(
-                    messages.getAlertMessage(), response)
-                    .replace("{player}", name);
-            platform.broadcastPermission(settings.getAlertPermission(), alertMsg);
+        if (!decision.matched()) return decision;
+        alert(name, response);
+        if (decision.action() == EnforcementAction.COMMAND) {
+            for (String template : decision.commands()) {
+                try { platform.dispatchConsoleCommand(CommandTemplate.render(template, name, ip, response.riskScore(), decision.reason())); }
+                catch (IllegalArgumentException e) { platform.getPluginLogger().warning("Configured AntiVPN command was rejected"); }
+            }
         }
-
-        platform.getPluginLogger().info("Blocked " + name + " (" + ip + ") - " +
-                resolveDetectionLabel(response) + " [Score: " + response.riskScore() + "]");
+        webhook.notify(name, ip, response, decision);
+        platform.getPluginLogger().info("Detected " + name + " - " + decision.reason() + " [Score: " + response.riskScore() + ", Action: " + decision.action() + "]");
+        return decision;
     }
 
     public boolean shouldBlock(@NotNull VpnResponse response) {
-        if (response.countryCode() != null) {
-            for (String country : settings.getWhitelistedCountries()) {
-                if (country.equalsIgnoreCase(response.countryCode())) {
-                    return false;
-                }
-            }
-        }
-
-        if (response.riskScore() >= settings.getRiskScoreThreshold()) {
-            return true;
-        }
-
-        for (DetectionType type : settings.getBlockedTypes()) {
-            if (type.isBlocked(response)) {
-                return true;
-            }
-        }
-
-        return false;
+        return policy.evaluate(response).action() == EnforcementAction.KICK;
     }
 
     private @NotNull String resolveDetectionLabel(@NotNull VpnResponse response) {
@@ -242,15 +253,26 @@ public final class AntiVpnEngine implements AntiVpnAPI {
     }
 
     public void alertAndLog(@Nullable UUID uuid, @NotNull String name, @NotNull String ip, @NotNull VpnResponse response) {
-        IpCheckEvent event = new IpCheckEvent(ip, uuid, name, response);
-        EventBus.get().fire(event);
+        processCheck(uuid, name, ip, response);
+    }
 
+    private void alert(@NotNull String name, @NotNull VpnResponse response) {
         if (settings.isAlertsEnabled()) {
             String alertMsg = messages.format(messages.getAlertMessage(), response).replace("{player}", name);
             platform.broadcastPermission(settings.getAlertPermission(), alertMsg);
         }
+    }
 
-        platform.getPluginLogger().info("Blocked " + name + " (" + ip + ") - " + resolveDetectionLabel(response) + " [Score: " + response.riskScore() + "]");
+    public void recordFailure(@Nullable UUID uuid, @NotNull String name, @NotNull String ip) {
+        if (settings.isHistoryEnabled()) telemetry.record(new CheckRecord(System.currentTimeMillis(), uuid, name, ip, null,
+                "API_FAILURE", 0, settings.isBlockOnApiFailure() ? EnforcementAction.KICK : EnforcementAction.ALLOW,
+                settings.isBlockOnApiFailure(), false, true));
+    }
+
+    public void acceptNetworkDecision(@NotNull String playerName, @NotNull NetworkDecision decision) {
+        if (settings.isHistoryEnabled()) telemetry.record(new CheckRecord(System.currentTimeMillis(), decision.playerUuid(), playerName,
+                decision.ip(), null, decision.reason(), decision.riskScore(), decision.action(),
+                decision.action() != EnforcementAction.ALLOW, false, false));
     }
 
     public void reload(@NotNull PluginConfig mainConfig, @NotNull PluginConfig messagesConfig) {
@@ -260,6 +282,7 @@ public final class AntiVpnEngine implements AntiVpnAPI {
         messages.reload();
         cache.rebuild(settings);
         whitelist.load();
+        webhook.reload(settings);
     }
 
     public void shutdown() {
@@ -268,6 +291,7 @@ public final class AntiVpnEngine implements AntiVpnAPI {
         httpClient.shutdown();
         cache.clear();
         whitelistStorage.close();
+        telemetry.close();
     }
 
     public @NotNull Settings getSettings() { return settings; }
@@ -275,4 +299,9 @@ public final class AntiVpnEngine implements AntiVpnAPI {
     public @NotNull VpnCache getCache() { return cache; }
     public @NotNull WhitelistManager getWhitelist() { return whitelist; }
     public @NotNull Platform getPlatform() { return platform; }
+    public @NotNull StatsSnapshot getStats() { return telemetry.stats(); }
+    public @NotNull List<CheckRecord> getHistory(@NotNull String player, int limit) { return telemetry.historyByPlayer(player, limit); }
+    public @Nullable VpnResponse getLastResult(@NotNull UUID uuid) { return lastResults.getIfPresent(uuid); }
+    public @NotNull PolicyDecision evaluate(@NotNull VpnResponse response) { return policy.evaluate(response); }
+    public @NotNull TelemetryFormatter getTelemetryFormatter() { return telemetryFormatter; }
 }
