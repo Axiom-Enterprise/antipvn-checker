@@ -24,6 +24,7 @@ public final class BungeeAntiVpnPlugin extends Plugin {
     @Override
     public void onEnable() {
         platform = new BungeePlatform(this);
+        getProxy().registerChannel("axiomantivpn:decision");
 
         saveDefaultResource("config.yml");
         saveDefaultResource("messages.yml");
@@ -55,6 +56,7 @@ public final class BungeeAntiVpnPlugin extends Plugin {
 
     @Override
     public void onDisable() {
+        getProxy().unregisterChannel("axiomantivpn:decision");
         if (engine != null) {
             engine.shutdown();
         }

@@ -37,7 +37,7 @@ status-online: "{prefix}&aAPI Status: &2ONLINE &8| &7Latency: &a{latency}ms"
 status-offline: "{prefix}&cAPI Status: &4OFFLINE"
 
 # Help message
-usage-help: "{prefix}&eUsage:\n&7/vpn check <ip> &8- &7Check an IP\n&7/vpn whitelist add <ip|player> &8- &7Whitelist\n&7/vpn whitelist remove <ip|player> &8- &7Remove whitelist\n&7/vpn whitelist list &8- &7List whitelist\n&7/vpn status &8- &7API status\n&7/vpn cache clear &8- &7Clear cache\n&7/vpn reload &8- &7Reload config"
+usage-help: "{prefix}&eUsage:\n&7/vpn check <ip> &8- &7Check an IP\n&7/vpn stats &8- &7Statistics\n&7/vpn history <player> [limit] &8- &7Recent checks\n&7/vpn whitelist add <ip|player> &8- &7Whitelist\n&7/vpn whitelist remove <ip|player> &8- &7Remove whitelist\n&7/vpn whitelist list &8- &7List whitelist\n&7/vpn status &8- &7API status\n&7/vpn cache clear &8- &7Clear cache\n&7/vpn reload &8- &7Reload config"
 
 # API key not configured
 api-key-missing: "{prefix}&cAPI key is not configured! Set it in config.yml"

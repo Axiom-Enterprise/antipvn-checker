@@ -65,6 +65,11 @@ public final class BungeePlatform implements Platform {
     }
 
     @Override
+    public void dispatchConsoleCommand(@NotNull String command) {
+        ProxyServer.getInstance().getPluginManager().dispatchCommand(ProxyServer.getInstance().getConsole(), command);
+    }
+
+    @Override
     public boolean isPlayerOnline(@NotNull UUID uuid) {
         return ProxyServer.getInstance().getPlayer(uuid) != null;
     }

@@ -6,17 +6,21 @@ plugins {
 dependencies {
     implementation project(':common')
     compileOnly 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
-    implementation 'io.github.revxrsal:lamp.common:4.0.0-rc.17'
-    implementation 'io.github.revxrsal:lamp.bukkit:4.0.0-rc.17'
+    implementation 'io.github.revxrsal:lamp.common:4.0.0-rc.18'
+    implementation 'io.github.revxrsal:lamp.bukkit:4.0.0-rc.18'
+    compileOnly 'me.clip:placeholderapi:2.12.3'
+    compileOnly 'net.luckperms:api:5.5'
 }
 
 shadowJar {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     archiveClassifier.set('')
     archiveBaseName.set('AxiomAntiVPN-Bukkit')
 
     relocate 'com.github.benmanes.caffeine', 'com.axiom.antivpn.libs.caffeine'
     relocate 'com.google.gson', 'com.axiom.antivpn.libs.gson'
     relocate 'revxrsal.commands', 'com.axiom.antivpn.libs.lamp'
+    relocate 'net.kyori.adventure.text.minimessage', 'com.axiom.antivpn.libs.minimessage'
 
     minimize {
         exclude dependency('com.github.ben-manes.caffeine:.*')
@@ -26,3 +30,8 @@ shadowJar {
 }
 
 build.dependsOn shadowJar
+
+processResources {
+    def pluginVersion = version
+    filesMatching('plugin.yml') { expand(version: pluginVersion) }
+}

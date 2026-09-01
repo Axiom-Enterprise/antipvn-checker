@@ -9,6 +9,7 @@ import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import revxrsal.commands.annotation.Command;
+import revxrsal.commands.annotation.Default;
 import revxrsal.commands.annotation.Subcommand;
 import revxrsal.commands.bungee.actor.BungeeCommandActor;
 import revxrsal.commands.bungee.annotation.CommandPermission;
@@ -77,6 +78,16 @@ public final class AntiVpnCommand {
         long size = engine.getCache().size();
         engine.clearCache();
         actor.reply(messages.formatWith(messages.getCacheCleared(), "{size}", String.valueOf(size)));
+    }
+
+    @Subcommand("stats")
+    public void stats(@NotNull BungeeCommandActor actor) {
+        actor.reply(engine.getMessages().format(engine.getTelemetryFormatter().formatStats(engine.getStats())));
+    }
+
+    @Subcommand("history")
+    public void history(@NotNull BungeeCommandActor actor, @NotNull String player, @Default("10") int limit) {
+        actor.reply(engine.getMessages().format(engine.getTelemetryFormatter().formatHistory(engine.getHistory(player, limit))));
     }
 
     @Subcommand("reload")

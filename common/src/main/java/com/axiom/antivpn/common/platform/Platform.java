@@ -27,6 +27,8 @@ public interface Platform {
 
     void broadcastPermission(@NotNull String permission, @NotNull String message);
 
+    void dispatchConsoleCommand(@NotNull String command);
+
     boolean isPlayerOnline(@NotNull UUID uuid);
 
     String getPlayerIp(@NotNull UUID uuid);

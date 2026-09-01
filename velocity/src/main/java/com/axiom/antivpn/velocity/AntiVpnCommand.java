@@ -9,6 +9,7 @@ import com.google.gson.JsonParser;
 import com.velocitypowered.api.proxy.ProxyServer;
 import org.jetbrains.annotations.NotNull;
 import revxrsal.commands.annotation.Command;
+import revxrsal.commands.annotation.Default;
 import revxrsal.commands.annotation.Subcommand;
 import revxrsal.commands.velocity.actor.VelocityCommandActor;
 import revxrsal.commands.velocity.annotation.CommandPermission;
@@ -91,6 +92,16 @@ public final class AntiVpnCommand {
         long size = engine.getCache().size();
         engine.clearCache();
         reply(actor, messages.formatWith(messages.getCacheCleared(), "{size}", String.valueOf(size)));
+    }
+
+    @Subcommand("stats")
+    public void stats(@NotNull VelocityCommandActor actor) {
+        reply(actor, engine.getMessages().format(engine.getTelemetryFormatter().formatStats(engine.getStats())));
+    }
+
+    @Subcommand("history")
+    public void history(@NotNull VelocityCommandActor actor, @NotNull String player, @Default("10") int limit) {
+        reply(actor, engine.getMessages().format(engine.getTelemetryFormatter().formatHistory(engine.getHistory(player, limit))));
     }
 
     @Subcommand("reload")

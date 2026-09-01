@@ -3,6 +3,28 @@
 # ║     https://antivpn.mathsanalysis.com                       ║
 # ╚══════════════════════════════════════════════════════════════╝
 
+mode: "ENFORCE"
+
+actions:
+  default: "KICK"
+  by-type:
+    VPN: "KICK"
+    PROXY: "KICK"
+    TOR: "KICK"
+    DATACENTER: "KICK"
+  by-risk-score:
+    75: "KICK"
+    90: "KICK"
+  commands: []
+
+history:
+  enabled: true
+  retention-days: 30
+  max-rows: 100000
+network:
+  mode: "STANDALONE"
+  channel-secret: ""
+
 api:
   # Your API key from https://antivpn.mathsanalysis.com
   # Format: axm_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -51,6 +73,12 @@ alerts:
 
   # Permission required to receive alerts
   permission: "antivpn.alerts"
+
+  discord:
+    enabled: false
+    webhook-url: ""
+    ip-display: "MASKED"
+    allow-custom-hosts: false
 
 connection:
   # Check players when they join the server

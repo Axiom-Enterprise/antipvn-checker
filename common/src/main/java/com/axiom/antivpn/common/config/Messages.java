@@ -3,6 +3,7 @@ package com.axiom.antivpn.common.config;
 import com.axiom.antivpn.api.model.VpnResponse;
 import com.axiom.antivpn.common.color.ColorParser;
 import org.jetbrains.annotations.NotNull;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 
 public final class Messages {
 
@@ -61,7 +62,7 @@ public final class Messages {
         this.cacheCleared = raw("cache-cleared", "{prefix}&aCache has been cleared. &7({size} entries removed)");
         this.statusOnline = raw("status-online", "{prefix}&aAPI Status: &2ONLINE &8| &7Latency: &a{latency}ms");
         this.statusOffline = raw("status-offline", "{prefix}&cAPI Status: &4OFFLINE");
-        this.usageHelp = raw("usage-help", "{prefix}&eUsage:\n&7/vpn check <ip> &8- &7Check an IP\n&7/vpn whitelist add <ip|player> &8- &7Whitelist\n&7/vpn whitelist remove <ip|player> &8- &7Remove whitelist\n&7/vpn whitelist list &8- &7List whitelist\n&7/vpn status &8- &7API status\n&7/vpn cache clear &8- &7Clear cache\n&7/vpn reload &8- &7Reload config");
+        this.usageHelp = raw("usage-help", "{prefix}&eUsage:\n&7/vpn check <ip> &8- &7Check an IP\n&7/vpn stats &8- &7Statistics\n&7/vpn history <player> [limit] &8- &7Recent checks\n&7/vpn whitelist add <ip|player> &8- &7Whitelist\n&7/vpn whitelist remove <ip|player> &8- &7Remove whitelist\n&7/vpn whitelist list &8- &7List whitelist\n&7/vpn status &8- &7API status\n&7/vpn cache clear &8- &7Clear cache\n&7/vpn reload &8- &7Reload config");
         this.apiKeyMissing = raw("api-key-missing", "{prefix}&cAPI key is not configured! Set it in config.yml");
     }
 
@@ -70,23 +71,29 @@ public final class Messages {
     }
 
     public @NotNull String format(@NotNull String template, @NotNull VpnResponse response) {
+        boolean miniMessage = template.startsWith("mm:");
         String result = template
                 .replace("{prefix}", prefix)
-                .replace("{ip}", response.ip())
+                .replace("{ip}", value(response.ip(), miniMessage))
                 .replace("{risk_score}", String.valueOf(response.riskScore()))
-                .replace("{isp}", response.isp() != null ? response.isp() : "Unknown")
-                .replace("{country}", response.country() != null ? response.country() : "Unknown")
-                .replace("{country_code}", response.countryCode() != null ? response.countryCode() : "??")
-                .replace("{city}", response.city() != null ? response.city() : "Unknown")
-                .replace("{region}", response.region() != null ? response.region() : "Unknown")
-                .replace("{asn}", response.asn() != null ? response.asn() : "Unknown")
-                .replace("{org}", response.org() != null ? response.org() : "Unknown")
+                .replace("{isp}", value(response.isp(), miniMessage))
+                .replace("{country}", value(response.country(), miniMessage))
+                .replace("{country_code}", value(response.countryCode(), miniMessage))
+                .replace("{city}", value(response.city(), miniMessage))
+                .replace("{region}", value(response.region(), miniMessage))
+                .replace("{asn}", value(response.asn(), miniMessage))
+                .replace("{org}", value(response.org(), miniMessage))
                 .replace("{vpn_status}", response.vpn() ? checkBlocked : checkSafe)
                 .replace("{proxy_status}", response.proxy() ? checkBlocked : checkSafe)
                 .replace("{tor_status}", response.tor() ? checkBlocked : checkSafe)
                 .replace("{datacenter_status}", response.datacenter() ? checkBlocked : checkSafe)
                 .replace("{detection_type}", resolveDetectionType(response));
         return ColorParser.parse(result);
+    }
+
+    private static @NotNull String value(String value, boolean miniMessage) {
+        String safe = value == null ? "Unknown" : value.replace('\r', ' ').replace('\n', ' ');
+        return miniMessage ? MiniMessage.miniMessage().escapeTags(safe) : safe;
     }
 
     public @NotNull String format(@NotNull String template) {

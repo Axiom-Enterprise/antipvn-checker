@@ -5,20 +5,22 @@ plugins {
 
 dependencies {
     implementation project(':common')
-    compileOnly 'com.velocitypowered:velocity-api:3.4.0'
-    annotationProcessor 'com.velocitypowered:velocity-api:3.4.0'
-    implementation 'io.github.revxrsal:lamp.common:4.0.0-rc.17'
-    implementation 'io.github.revxrsal:lamp.velocity:4.0.0-rc.17'
-    implementation 'io.github.revxrsal:lamp.brigadier:4.0.0-rc.17'
+    compileOnly 'com.velocitypowered:velocity-api:3.5.1'
+    annotationProcessor 'com.velocitypowered:velocity-api:3.5.1'
+    implementation 'io.github.revxrsal:lamp.common:4.0.0-rc.18'
+    implementation 'io.github.revxrsal:lamp.velocity:4.0.0-rc.18'
+    implementation 'io.github.revxrsal:lamp.brigadier:4.0.0-rc.18'
 }
 
 shadowJar {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     archiveClassifier.set('')
     archiveBaseName.set('AxiomAntiVPN-Velocity')
 
     relocate 'com.github.benmanes.caffeine', 'com.axiom.antivpn.libs.caffeine'
     relocate 'com.google.gson', 'com.axiom.antivpn.libs.gson'
     relocate 'revxrsal.commands', 'com.axiom.antivpn.libs.lamp'
+    relocate 'net.kyori.adventure.text.minimessage', 'com.axiom.antivpn.libs.minimessage'
 
     minimize {
         exclude dependency('com.github.ben-manes.caffeine:.*')

@@ -1,6 +1,8 @@
 package com.axiom.antivpn.common.color;
 
 import org.jetbrains.annotations.NotNull;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,6 +18,9 @@ public final class ColorParser {
     }
 
     public static @NotNull String parse(@NotNull String input) {
+        if (input.startsWith("mm:")) {
+            return LegacyComponentSerializer.legacySection().serialize(MiniMessage.miniMessage().deserialize(input.substring(3)));
+        }
         String result = input;
         result = parseGradients(result);
         result = parseRgb(result);
