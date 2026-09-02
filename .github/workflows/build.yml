@@ -63,6 +63,9 @@ jobs:
           cp bukkit/build/libs/AxiomAntiVPN-Bukkit-*.jar dist/ || true
           cp bungeecord/build/libs/AxiomAntiVPN-BungeeCord*.jar dist/ || true
           cp velocity/build/libs/AxiomAntiVPN-Velocity*.jar dist/ || true
+          cp folia/build/libs/AxiomAntiVPN-Folia*.jar dist/ || true
+          cp nukkit/build/libs/AxiomAntiVPN-NukkitX*.jar dist/ || true
+          cp minestom/build/libs/AxiomAntiVPN-Minestom*.jar dist/ || true
           cp api/build/libs/*.jar dist/ || true
           ls -la dist/
 
@@ -93,6 +96,27 @@ jobs:
           name: AxiomAntiVPN-API-${{ steps.version.outputs.version }}
           path: api/build/libs/*.jar
           if-no-files-found: warn
+
+      - name: Upload Folia artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AxiomAntiVPN-Folia-${{ steps.version.outputs.version }}
+          path: folia/build/libs/AxiomAntiVPN-Folia-*.jar
+          if-no-files-found: error
+
+      - name: Upload NukkitX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AxiomAntiVPN-NukkitX-${{ steps.version.outputs.version }}
+          path: nukkit/build/libs/AxiomAntiVPN-NukkitX-*.jar
+          if-no-files-found: error
+
+      - name: Upload Minestom artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AxiomAntiVPN-Minestom-${{ steps.version.outputs.version }}
+          path: minestom/build/libs/AxiomAntiVPN-Minestom-*.jar
+          if-no-files-found: error
 
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/v') || (github.ref == 'refs/heads/main' && github.event_name == 'push')

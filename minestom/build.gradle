@@ -1,0 +1,16 @@
+plugins {
+    id 'java'
+    id 'com.gradleup.shadow'
+}
+
+dependencies {
+    implementation project(':common')
+    compileOnly 'net.minestom:minestom:2025.07.03-1.21.5'
+}
+
+shadowJar {
+    archiveClassifier.set('')
+    archiveBaseName.set('AxiomAntiVPN-Minestom')
+}
+
+build.dependsOn shadowJar

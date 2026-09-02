@@ -1,0 +1,7 @@
+name: AxiomAntiVPN
+version: '${version}'
+main: com.axiom.antivpn.nukkit.NukkitAntiVpnPlugin
+api: ["1.0.0"]
+author: Axiom
+description: Advanced VPN & Proxy Detection powered by Axiom AntiVPN API
+website: https://antivpn.mathsanalysis.com
