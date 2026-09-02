@@ -93,14 +93,11 @@ public final class AntiVpnEngine implements AntiVpnAPI {
                 storage.addIp(raw.toLowerCase(Locale.ROOT));
             }
         }
-        // Old config stored UUIDs and names as two independent lists; pair them by
-        // index since that's how they were always added together (addPlayer(uuid, name)).
         for (int i = 0; i < uuids.size(); i++) {
             String name = i < names.size() ? names.get(i) : null;
             storage.addPlayer(uuids.get(i), name);
         }
 
-        // "whitelist.countries" is unrelated (country-code allowlist) and stays in the config.
         mainConfig.set("whitelist.ips", null);
         mainConfig.set("whitelist.players", null);
         mainConfig.set("whitelist.player-names", null);

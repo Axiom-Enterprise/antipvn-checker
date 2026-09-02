@@ -7,7 +7,6 @@ import cn.nukkit.event.player.PlayerAsyncPreLoginEvent;
 import com.axiom.antivpn.common.AntiVpnEngine;
 import com.axiom.antivpn.common.policy.EnforcementAction;
 
-/** NukkitX entrypoint; platform hooks are isolated for NukkitX lifecycle compatibility. */
 public final class NukkitAntiVpnPlugin extends PluginBase implements Listener {
     private AntiVpnEngine engine;
     @Override

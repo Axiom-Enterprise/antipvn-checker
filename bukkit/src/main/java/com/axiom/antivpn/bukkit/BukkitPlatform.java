@@ -105,7 +105,6 @@ public final class BukkitPlatform implements Platform {
                 return true;
             }
         } catch (ReflectiveOperationException | RuntimeException ignored) {
-            // Standard Bukkit scheduler remains the fallback on non-Folia servers.
         }
         return false;
     }

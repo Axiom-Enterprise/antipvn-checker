@@ -26,10 +26,6 @@ public final class WhitelistStorage {
         this.logger = logger;
         Path dbPath = dataFolder.resolve("whitelist.db");
         try {
-            // Plugin classloaders (Bukkit/BungeeCord/Velocity) are isolated, so DriverManager's
-            // lazy ServiceLoader scan (run once, with whatever classloader was active then) never
-            // sees org.sqlite.JDBC shaded into this jar. Force-load it through our own classloader
-            // so its static block registers the driver before we ask DriverManager for a connection.
             Class.forName("org.sqlite.JDBC");
             this.connection = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
             try (Statement stmt = connection.createStatement()) {

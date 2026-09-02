@@ -6,7 +6,6 @@ import net.minestom.server.MinecraftServer;
 import net.minestom.server.event.player.AsyncPlayerPreLoginEvent;
 import net.kyori.adventure.text.Component;
 
-/** Minestom integration entrypoint; register it from the server bootstrap. */
 public final class AxiomAntiVpnMinestom {
     private AxiomAntiVpnMinestom() { }
 
@@ -22,11 +21,11 @@ public final class AxiomAntiVpnMinestom {
             String ip = ((java.net.InetSocketAddress) event.getConnection().getRemoteAddress()).getAddress().getHostAddress();
             try {
                 var response = engine.checkIp(ip).join();
-                if (response != null && engine.processCheck(event.getPlayerUuid(), event.getUsername(), ip, response).action() == EnforcementAction.KICK) {
+                if (response != null && engine.processCheck(event.getGameProfile().uuid(), event.getGameProfile().name(), ip, response).action() == EnforcementAction.KICK) {
                     event.getConnection().kick(Component.text(engine.getMessages().format(engine.getMessages().getKickMessage(), response)));
                 }
             } catch (Exception ignored) {
-                engine.recordFailure(event.getPlayerUuid(), event.getUsername(), ip);
+                engine.recordFailure(event.getGameProfile().uuid(), event.getGameProfile().name(), ip);
             }
         });
     }
