@@ -18,7 +18,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class FoliaAntiVpnPlugin extends JavaPlugin {
+public class FoliaAntiVpnPlugin extends JavaPlugin {
+
     private AntiVpnEngine engine;
 
     @Override
