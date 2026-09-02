@@ -16,5 +16,7 @@ shadowJar {
 build.dependsOn shadowJar
 
 processResources {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from project(':bukkit').sourceSets.main.resources
     filesMatching('plugin.yml') { expand(version: project.version) }
 }

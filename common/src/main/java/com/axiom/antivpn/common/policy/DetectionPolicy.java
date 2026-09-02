@@ -16,9 +16,10 @@ public final class DetectionPolicy {
     }
 
     public @NotNull PolicyDecision evaluate(@NotNull VpnResponse response) {
-        if (response.countryCode() != null && settings.getWhitelistedCountries().stream()
-                .anyMatch(country -> country.equalsIgnoreCase(response.countryCode()))) {
-            return PolicyDecision.allow("country-allowlist");
+        if (response.countryCode() != null) {
+            for (String country : settings.getWhitelistedCountries()) {
+                if (country.equalsIgnoreCase(response.countryCode())) return PolicyDecision.allow("country-allowlist");
+            }
         }
         DetectionType type = detectionType(response);
         Map.Entry<Integer, EnforcementAction> risk = settings.getRiskActions().floorEntry(response.riskScore());

@@ -13,7 +13,7 @@ final class NukkitConfig implements PluginConfig {
     public boolean getBoolean(String p, boolean d) { return config.getBoolean(p, d); }
     public double getDouble(String p, double d) { return config.getDouble(p, d); }
     public List<String> getStringList(String p) { return config.getStringList(p); }
-    public Set<String> getKeys(String p) { Object v=config.get(p); return v instanceof Map<?,?> m ? m.keySet().stream().map(String::valueOf).collect(java.util.stream.Collectors.toSet()) : Set.of(); }
+    public Set<String> getKeys(String p) { Object v=config.get(p); if (!(v instanceof Map<?,?> m)) return Set.of(); Set<String> keys=new LinkedHashSet<>(); for(Object key:m.keySet()) keys.add(String.valueOf(key)); return keys; }
     public Map<String,Object> getSection(String p) { Object v=config.get(p); if (!(v instanceof Map<?,?> m)) return Map.of(); Map<String,Object> out=new LinkedHashMap<>(); m.forEach((k,val)->out.put(String.valueOf(k),val)); return out; }
     public boolean contains(String p) { return config.exists(p); }
     public void set(String p,Object v) { config.set(p,v); }

@@ -34,7 +34,13 @@ public final class TelemetryFormatter {
 
     private String compact(Map<String, Long> values) {
         if (values.isEmpty()) return "none";
-        return values.entrySet().stream().map(e -> e.getKey() + ": " + e.getValue()).limit(5)
-                .reduce((a, b) -> a + ", " + b).orElse("none");
+        StringBuilder out = new StringBuilder();
+        int count = 0;
+        for (Map.Entry<String, Long> entry : values.entrySet()) {
+            if (count++ == 5) break;
+            if (out.length() > 0) out.append(", ");
+            out.append(entry.getKey()).append(": ").append(entry.getValue());
+        }
+        return out.toString();
     }
 }
