@@ -1,8 +1,16 @@
 name: AxiomAntiVPN
 version: '${version}'
-main: com.axiom.antivpn.bukkit.BukkitAntiVpnPlugin
+main: com.axiom.antivpn.folia.FoliaAntiVpnPlugin
 api-version: '1.21'
 description: Advanced VPN & Proxy Detection powered by Axiom AntiVPN API
 authors: [Axiom]
 website: https://antivpn.mathsanalysis.com
 softdepend: [PlaceholderAPI, LuckPerms]
+
+permissions:
+  antivpn.admin:
+    default: op
+  antivpn.bypass:
+    default: false
+  antivpn.alerts:
+    default: op
