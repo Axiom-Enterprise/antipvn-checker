@@ -7,6 +7,11 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versione JAR (es. 1.2.3); vuoto per versione automatica'
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -31,8 +36,12 @@ jobs:
       - name: Resolve build version
         id: version
         shell: bash
+        env:
+          MANUAL_VERSION: ${{ inputs.version }}
         run: |
-          if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" == v* ]]; then
+          if [[ -n "${MANUAL_VERSION}" ]]; then
+            VERSION="${MANUAL_VERSION}"
+          elif [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" == v* ]]; then
             VERSION="${GITHUB_REF_NAME#v}"
           elif [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
             VERSION="1.0.2-pr.${{ github.event.pull_request.number }}.${GITHUB_RUN_NUMBER}"
