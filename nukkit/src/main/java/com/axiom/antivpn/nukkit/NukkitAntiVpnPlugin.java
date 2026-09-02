@@ -9,6 +9,7 @@ import com.axiom.antivpn.common.policy.EnforcementAction;
 
 public final class NukkitAntiVpnPlugin extends PluginBase implements Listener {
     private AntiVpnEngine engine;
+
     @Override
     public void onEnable() {
         saveDefaultConfig();
@@ -17,6 +18,7 @@ public final class NukkitAntiVpnPlugin extends PluginBase implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
         getLogger().info("AxiomAntiVPN NukkitX module enabled");
     }
+
     @EventHandler
     public void onPreLogin(PlayerAsyncPreLoginEvent event) {
         if (!engine.getSettings().isCheckOnLogin()) return;
@@ -31,5 +33,6 @@ public final class NukkitAntiVpnPlugin extends PluginBase implements Listener {
             if (engine.getSettings().isBlockOnApiFailure()) event.disAllow(engine.getMessages().format(engine.getMessages().getKickMessage()));
         }
     }
+
     @Override public void onDisable() { if (engine != null) engine.shutdown(); }
 }
