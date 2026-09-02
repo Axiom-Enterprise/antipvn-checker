@@ -1,0 +1,14 @@
+mode: "ENFORCE"
+api:
+  key: ""
+  base-url: "https://antivpn.mathsanalysis.com/api"
+  timeout-ms: 5000
+  max-retries: 2
+detection:
+  blocked-types: ["VPN", "PROXY", "TOR", "DATACENTER"]
+  risk-score-threshold: 75
+  block-on-api-failure: false
+connection:
+  check-on-login: true
+history:
+  enabled: true
