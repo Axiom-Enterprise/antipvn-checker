@@ -1,8 +1,5 @@
 package com.axiom.antivpn.bukkit;
 
-import com.axiom.antivpn.bukkit.scheduler.BukkitSchedulerAdapter;
-import com.axiom.antivpn.bukkit.scheduler.FoliaSchedulerAdapter;
-import com.axiom.antivpn.bukkit.scheduler.SchedulerAdapter;
 import com.axiom.antivpn.common.platform.Platform;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -17,36 +14,35 @@ import java.util.logging.Logger;
 public final class BukkitPlatform implements Platform {
 
     private final @NotNull JavaPlugin plugin;
-    private final @NotNull SchedulerAdapter scheduler;
-    private final boolean folia;
 
     public BukkitPlatform(@NotNull JavaPlugin plugin) {
         this.plugin = plugin;
-        this.folia = SchedulerAdapter.isFolia();
-        this.scheduler = folia ? new FoliaSchedulerAdapter(plugin) : new BukkitSchedulerAdapter(plugin);
     }
 
-    @Override public @NotNull String getPlatformName() { return folia ? "Folia" : "Bukkit"; }
+    @Override public @NotNull String getPlatformName() { return "Bukkit"; }
     @Override public @NotNull Logger getPluginLogger() { return plugin.getLogger(); }
     @Override public @NotNull Path getDataFolder() { return plugin.getDataFolder().toPath(); }
-    @Override public @NotNull Executor getAsyncExecutor() { return scheduler::runAsync; }
+    @Override public @NotNull Executor getAsyncExecutor() { return this::runAsync; }
 
     @Override
     public void runAsync(@NotNull Runnable task) {
-        scheduler.runAsync(task);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, task);
     }
 
     @Override
     public void runSync(@NotNull Runnable task) {
-        scheduler.runGlobal(task);
+        if (Bukkit.isPrimaryThread()) {
+            task.run();
+        } else {
+            Bukkit.getScheduler().runTask(plugin, task);
+        }
     }
 
     @Override
     public void kickPlayer(@NotNull UUID uuid, @NotNull String message) {
-        Player player = Bukkit.getPlayer(uuid);
-        if (player == null) return;
-        scheduler.runForEntity(player, () -> {
-            if (player.isOnline()) {
+        runSync(() -> {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null) {
                 player.kickPlayer(message);
             }
         });
@@ -67,7 +63,7 @@ public final class BukkitPlatform implements Platform {
 
     @Override
     public void dispatchConsoleCommand(@NotNull String command) {
-        scheduler.runGlobal(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command));
+        runSync(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command));
     }
 
     @Override
@@ -92,9 +88,5 @@ public final class BukkitPlatform implements Platform {
 
     public @NotNull JavaPlugin getPlugin() {
         return plugin;
-    }
-
-    public boolean isFolia() {
-        return folia;
     }
 }
