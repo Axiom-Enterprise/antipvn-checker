@@ -22,7 +22,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/** File-backed YAML config for platforms without a native configuration API (Velocity, Minestom). */
 public final class YamlConfig implements PluginConfig {
 
     private final @NotNull Path file;

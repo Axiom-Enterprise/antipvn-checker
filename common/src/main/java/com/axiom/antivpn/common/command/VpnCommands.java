@@ -16,11 +16,6 @@ import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-/**
- * Platform-neutral implementation of every {@code /vpn} subcommand. Platforms only adapt their
- * command framework to these calls and supply a name-to-UUID resolver for whitelist operations.
- * Replies may arrive on async threads; the reply consumer must be safe to call from any thread.
- */
 public final class VpnCommands {
 
     public static final String ADMIN_PERMISSION = "antivpn.admin";

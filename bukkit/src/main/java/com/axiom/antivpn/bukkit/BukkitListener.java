@@ -16,7 +16,6 @@ public final class BukkitListener implements Listener {
         this.engine = engine;
     }
 
-    /** Runs off the main thread on both Paper and Folia, so waiting on the API here is safe. */
     @EventHandler(priority = EventPriority.HIGH)
     public void onAsyncPreLogin(@NotNull AsyncPlayerPreLoginEvent event) {
         if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) return;

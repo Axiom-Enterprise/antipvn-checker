@@ -16,7 +16,6 @@ final class NukkitListener implements Listener {
         this.engine = engine;
     }
 
-    /** Fired on Nukkit's async login pool, so blocking on the API result is safe here. */
     @EventHandler(priority = EventPriority.HIGH)
     public void onAsyncPreLogin(@NotNull PlayerAsyncPreLoginEvent event) {
         if (event.getLoginResult() != PlayerAsyncPreLoginEvent.LoginResult.SUCCESS) return;

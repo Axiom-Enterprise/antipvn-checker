@@ -105,7 +105,6 @@ public final class VelocityAntiVpnPlugin {
         logger.info("AxiomAntiVPN disabled");
     }
 
-    /** Online player first, offline-mode hash second, Mojang profile lookup last. */
     private @NotNull CompletableFuture<@Nullable UUID> resolvePlayer(@NotNull String name) {
         Player online = server.getPlayer(name).orElse(null);
         if (online != null) {

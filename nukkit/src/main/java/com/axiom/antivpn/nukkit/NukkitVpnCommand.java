@@ -13,7 +13,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 
-/** Hand-rolled dispatcher: Nukkit has no Lamp module. Replies are marshalled back to the main thread. */
 final class NukkitVpnCommand implements CommandExecutor {
 
     private final @NotNull VpnCommands commands;
@@ -24,7 +23,6 @@ final class NukkitVpnCommand implements CommandExecutor {
         this.platform = platform;
     }
 
-    /** Bedrock command UI overloads, one per subcommand. */
     static @NotNull Map<String, CommandParameter[]> parameters() {
         Map<String, CommandParameter[]> overloads = new LinkedHashMap<>();
         overloads.put("check", new CommandParameter[]{

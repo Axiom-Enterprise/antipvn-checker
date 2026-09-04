@@ -19,10 +19,6 @@ import java.nio.file.Path;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-/**
- * Minestom has no plugin loader: call {@link #create()} (or {@link #create(Path, PermissionChecker)})
- * from your server bootstrap before {@code MinecraftServer#start}. Shutdown is hooked automatically.
- */
 public final class AxiomAntiVpnMinestom {
 
     public static final String DECISION_CHANNEL = "axiomantivpn:decision";

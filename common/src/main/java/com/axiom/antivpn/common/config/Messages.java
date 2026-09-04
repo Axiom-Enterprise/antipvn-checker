@@ -108,7 +108,6 @@ public final class Messages {
         return config.getString(path, def);
     }
 
-    /** Accepts either a YAML list or a single string so older configs keep working. */
     private @NotNull List<String> lines(@NotNull String path, @NotNull List<String> def) {
         List<String> list = config.getStringList(path);
         if (!list.isEmpty()) return List.copyOf(list);
@@ -120,7 +119,6 @@ public final class Messages {
         return formatLines(kickMessage, response);
     }
 
-    /** API-failure variant: check placeholders are filled with neutral values instead of leaking raw tokens. */
     public @NotNull String formatKick() {
         return formatLines(kickMessage, null, FAILURE_PLACEHOLDERS);
     }
@@ -144,7 +142,6 @@ public final class Messages {
         return render(template, response);
     }
 
-    /** Each line is rendered on its own so a list can mix MiniMessage and legacy entries. */
     public @NotNull String formatLines(@NotNull List<String> lines, @Nullable VpnResponse response, @NotNull String... pairs) {
         if (lines.size() == 1) return render(lines.get(0), response, pairs);
         StringBuilder out = new StringBuilder(lines.size() * 48);

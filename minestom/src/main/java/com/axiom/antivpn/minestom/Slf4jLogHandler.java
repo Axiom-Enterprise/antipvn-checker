@@ -9,7 +9,6 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
-/** Bridges the engine's java.util.logging output into Minestom's SLF4J logger. */
 final class Slf4jLogHandler extends Handler {
 
     private final @NotNull org.slf4j.Logger target;

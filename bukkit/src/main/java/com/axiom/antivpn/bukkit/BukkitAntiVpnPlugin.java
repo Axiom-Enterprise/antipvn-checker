@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-/** Bukkit/Paper entrypoint. The Folia module reuses it unchanged; platform detection is runtime-based. */
 public class BukkitAntiVpnPlugin extends JavaPlugin {
 
     public static final String DECISION_CHANNEL = "axiomantivpn:decision";

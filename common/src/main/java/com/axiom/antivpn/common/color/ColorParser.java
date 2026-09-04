@@ -8,13 +8,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Renders every supported text syntax into a section-sign legacy string.
- * <p>
- * Supported inputs: legacy {@code &a}, hex {@code &#RRGGBB}, {@code {rgb:R,G,B}},
- * {@code {gradient:#RRGGBB:#RRGGBB}text{/gradient}} and MiniMessage when the value starts with {@code mm:}.
- * Hex colours are emitted as {@code §x§R§R§G§G§B§B}, the form every Java platform understands.
- */
 public final class ColorParser {
 
     public static final String MINI_MESSAGE_PREFIX = "mm:";
@@ -58,10 +51,6 @@ public final class ColorParser {
         return SECTION_SERIALIZER.deserialize(parse(input));
     }
 
-    /**
-     * Component round-trips drop styles that carry no text, but a prefix such as {@code "&8» &7"} relies on
-     * its trailing colour to style what follows; those trailing codes are re-emitted as open tags.
-     */
     public static @NotNull String toMiniMessage(@NotNull String input) {
         String legacy = parse(input);
         return MINI_MESSAGE.serialize(SECTION_SERIALIZER.deserialize(legacy)) + trailingStyleTags(legacy);
@@ -71,7 +60,6 @@ public final class ColorParser {
         return MINI_MESSAGE.escapeTags(raw);
     }
 
-    /** Bedrock has no RGB text colours: every {@code §x} sequence becomes the closest legacy code. */
     public static @NotNull String downsampleHex(@NotNull String sectionText) {
         Matcher matcher = SECTION_HEX.matcher(sectionText);
         if (!matcher.find()) return sectionText;

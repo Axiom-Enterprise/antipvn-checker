@@ -38,7 +38,6 @@ public final class VelocityPlatform implements Platform {
         asyncExecutor.execute(task);
     }
 
-    /** Velocity has no main thread; every API call is thread-safe. */
     @Override
     public void runSync(@NotNull Runnable task) {
         task.run();

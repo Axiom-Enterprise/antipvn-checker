@@ -24,7 +24,6 @@ final class MinestomListener {
         this.engine = engine;
     }
 
-    /** Runs on Minestom's login thread pool, so blocking on the API result is safe here. */
     void onPreLogin(@NotNull AsyncPlayerPreLoginEvent event) {
         String ip = hostAddress(event.getConnection().getRemoteAddress());
         if (ip == null) return;
@@ -34,7 +33,6 @@ final class MinestomListener {
         }
     }
 
-    /** BACKEND mode behind BungeeCord/Velocity: record the proxy's signed decision for history. */
     void onPluginMessage(@NotNull PlayerPluginMessageEvent event) {
         if (!AxiomAntiVpnMinestom.DECISION_CHANNEL.equals(event.getIdentifier())) return;
         if (!engine.getSettings().getNetworkMode().equals("BACKEND")) return;

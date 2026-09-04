@@ -193,7 +193,6 @@ public final class AntiVpnEngine implements AntiVpnAPI {
         cache.clear();
     }
 
-    /** Local addresses, whitelisted IPs/players and BACKEND mode never hit the API. */
     public boolean shouldCheckLogin(@NotNull String ip, @Nullable UUID uuid, @NotNull String name) {
         if (!settings.isCheckOnLogin() || settings.getNetworkMode().equals(NETWORK_BACKEND)) return false;
         if (IpUtil.isLocalIp(ip) || whitelist.isIpWhitelisted(ip)) return false;
@@ -201,10 +200,6 @@ public final class AntiVpnEngine implements AntiVpnAPI {
         return !whitelist.isPlayerNameWhitelisted(name);
     }
 
-    /**
-     * Full pre-login pipeline: gate, API check, policy, alerts, telemetry and kick-message rendering.
-     * Never completes exceptionally; API failures honour {@code detection.block-on-api-failure}.
-     */
     public @NotNull CompletableFuture<LoginVerdict> verifyLogin(@Nullable UUID uuid, @NotNull String name, @NotNull String ip) {
         if (!shouldCheckLogin(ip, uuid, name) || settings.getApiKey().isEmpty()) {
             return CompletableFuture.completedFuture(LoginVerdict.ALLOW);
@@ -230,7 +225,6 @@ public final class AntiVpnEngine implements AntiVpnAPI {
         return settings.isBlockOnApiFailure() ? LoginVerdict.deny(messages.formatKick()) : LoginVerdict.ALLOW;
     }
 
-    /** Post-login variant for platforms that can only act once the player object exists. */
     public @NotNull CompletableFuture<Void> handlePlayerJoin(@NotNull UUID uuid, @NotNull String name, @NotNull String ip) {
         if (platform.hasPermission(uuid, BYPASS_PERMISSION)) {
             return CompletableFuture.completedFuture(null);

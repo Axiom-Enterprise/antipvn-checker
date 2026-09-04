@@ -38,7 +38,6 @@ final class MinestomPlatform implements Platform {
         executor.execute(task);
     }
 
-    /** Minestom has no main thread; the scheduler's next tick is the closest safe context. */
     @Override
     public void runSync(@NotNull Runnable task) {
         MinecraftServer.getSchedulerManager().scheduleNextTick(task);

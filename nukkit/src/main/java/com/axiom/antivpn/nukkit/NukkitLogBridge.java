@@ -9,7 +9,6 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
-/** Routes the engine's java.util.logging output into Nukkit's plugin logger so it lands in the server console. */
 final class NukkitLogBridge extends Handler {
 
     private final @NotNull PluginLogger target;
