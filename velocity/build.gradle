@@ -32,6 +32,7 @@ shadowJar {
 
     relocate 'com.github.benmanes.caffeine', 'com.axiom.antivpn.libs.caffeine'
     relocate 'com.google.gson', 'com.axiom.antivpn.libs.gson'
+    relocate 'org.yaml.snakeyaml', 'com.axiom.antivpn.libs.snakeyaml'
     relocate 'revxrsal.commands', 'com.axiom.antivpn.libs.lamp'
     relocate 'net.kyori.adventure.text.minimessage', 'com.axiom.antivpn.libs.minimessage'
 

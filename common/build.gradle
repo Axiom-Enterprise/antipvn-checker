@@ -7,6 +7,14 @@ dependencies {
     api 'com.github.ben-manes.caffeine:caffeine:3.2.4'
     api 'com.google.code.gson:gson:2.14.0'
     api 'org.xerial:sqlite-jdbc:3.53.4.0'
+    api 'org.yaml:snakeyaml:2.7'
     api 'net.kyori:adventure-text-minimessage:5.2.0'
     api 'net.kyori:adventure-text-serializer-legacy:5.2.0'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:6.1.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
 }

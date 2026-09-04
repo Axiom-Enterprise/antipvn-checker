@@ -1,7 +1,6 @@
 package com.axiom.antivpn.bungee;
 
-import com.axiom.antivpn.common.AntiVpnEngine;
-import com.axiom.antivpn.common.config.Messages;
+import com.axiom.antivpn.common.command.VpnCommands;
 import org.jetbrains.annotations.NotNull;
 import revxrsal.commands.bungee.actor.BungeeCommandActor;
 import revxrsal.commands.bungee.exception.BungeeExceptionHandler;
@@ -12,27 +11,24 @@ import revxrsal.commands.node.ParameterNode;
 
 public final class BungeeVpnExceptionHandler extends BungeeExceptionHandler {
 
-    private final @NotNull AntiVpnEngine engine;
+    private final @NotNull VpnCommands commands;
 
-    public BungeeVpnExceptionHandler(@NotNull AntiVpnEngine engine) {
-        this.engine = engine;
+    public BungeeVpnExceptionHandler(@NotNull VpnCommands commands) {
+        this.commands = commands;
     }
 
     @Override
     public void onNoPermission(@NotNull NoPermissionException e, @NotNull BungeeCommandActor actor) {
-        Messages messages = engine.getMessages();
-        actor.reply(messages.format(messages.getNoPermission()));
+        commands.noPermission(actor::reply);
     }
 
     @Override
     public void onUnknownCommand(@NotNull UnknownCommandException e, @NotNull BungeeCommandActor actor) {
-        Messages messages = engine.getMessages();
-        actor.reply(messages.format(messages.getUsageHelp()));
+        commands.usage(actor::reply);
     }
 
     @Override
     public void onMissingArgument(@NotNull MissingArgumentException e, @NotNull BungeeCommandActor actor, @NotNull ParameterNode<BungeeCommandActor, ?> parameter) {
-        Messages messages = engine.getMessages();
-        actor.reply(messages.format(messages.getUsageHelp()));
+        commands.usage(actor::reply);
     }
 }

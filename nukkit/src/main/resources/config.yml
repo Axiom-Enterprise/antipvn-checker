@@ -1,14 +1,94 @@
+# ╔══════════════════════════════════════════════════════════════╗
+# ║              Axiom AntiVPN - Configuration                  ║
+# ║     https://antivpn.mathsanalysis.com                       ║
+# ╚══════════════════════════════════════════════════════════════╝
+
+# ENFORCE applies the configured actions. MONITOR only records and alerts, never kicks or runs commands.
 mode: "ENFORCE"
-api:
-  key: ""
-  base-url: "https://antivpn.mathsanalysis.com/api"
-  timeout-ms: 5000
-  max-retries: 2
-detection:
-  blocked-types: ["VPN", "PROXY", "TOR", "DATACENTER"]
-  risk-score-threshold: 75
-  block-on-api-failure: false
-connection:
-  check-on-login: true
+
+actions:
+  # Fallback action: ALLOW, ALERT, KICK, COMMAND
+  default: "KICK"
+  # Per detection type: VPN, PROXY, TOR, DATACENTER, RESIDENTIAL, MOBILE
+  by-type:
+    VPN: "KICK"
+    PROXY: "KICK"
+    TOR: "KICK"
+    DATACENTER: "KICK"
+  # Highest threshold not greater than the returned risk score wins
+  by-risk-score:
+    75: "KICK"
+    90: "KICK"
+  # Console commands run by the COMMAND action
+  # Placeholders: {player} {ip} {risk_score} {detection}
+  commands: []
+
 history:
+  # Local SQLite history of every check
   enabled: true
+  retention-days: 30
+  max-rows: 100000
+
+api:
+  # Your API key from https://antivpn.mathsanalysis.com
+  # Format: axm_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  key: ""
+
+  # API base URL (do not change unless instructed)
+  base-url: "https://antivpn.mathsanalysis.com/api"
+
+  # Request timeout in milliseconds
+  timeout-ms: 5000
+
+  # Maximum retry attempts on failure
+  max-retries: 2
+
+detection:
+  # Which connection types to block
+  # Available: VPN, PROXY, TOR, DATACENTER, RESIDENTIAL, MOBILE
+  blocked-types:
+    - "VPN"
+    - "PROXY"
+    - "TOR"
+    - "DATACENTER"
+
+  # Risk score threshold (0-100). Players with a score >= this value will be blocked
+  risk-score-threshold: 75
+
+  # Block players when the API is unreachable
+  block-on-api-failure: false
+
+cache:
+  # How long to cache results (in seconds)
+  ttl-seconds: 600
+
+  # Maximum number of cached entries
+  max-size: 10000
+
+whitelist:
+  # Whitelisted country codes (ISO 3166-1 alpha-2)
+  # Players from these countries will not be blocked
+  # IP and player whitelist entries are managed via /vpn whitelist and stored in whitelist.db
+  countries: []
+
+alerts:
+  # Enable staff alerts when a player is blocked
+  enabled: true
+
+  # Permission required to receive alerts
+  permission: "antivpn.alerts"
+
+  discord:
+    enabled: false
+    webhook-url: ""
+    # FULL, MASKED or HIDDEN
+    ip-display: "MASKED"
+    # Webhook hosts other than discord.com require HTTPS and this flag
+    allow-custom-hosts: false
+
+connection:
+  # Check players when they join the server
+  check-on-login: true
+
+  # Perform checks asynchronously (recommended: true)
+  async-check: true

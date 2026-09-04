@@ -1,11 +1,47 @@
+# ╔══════════════════════════════════════════════════════════════╗
+# ║                 Axiom AntiVPN - Messages                     ║
+# ╚══════════════════════════════════════════════════════════════╝
+#
+# ── Text formatting (all supported everywhere) ─────────────────
+#   Legacy colours   &0-&9 &a-&f  formats &l &o &n &m &k  reset &r
+#   Hex colours      &#RRGGBB                 e.g. "&#7C3AEDAxiom"
+#   RGB              {rgb:R,G,B}              e.g. "{rgb:124,58,237}Axiom"
+#   Gradient         {gradient:#RRGGBB:#RRGGBB}text{/gradient}
+#   MiniMessage      prefix the value with mm:
+#                    e.g. "mm:<gradient:#7C3AED:#EC4899><bold>Axiom</bold></gradient> <gray>text"
+#   Multi-line       kick-message and alert-message accept a YAML list, one entry per line.
+#                    Each entry is rendered on its own, so lines may mix mm: and legacy syntax.
+#
+# ── Placeholders ───────────────────────────────────────────────
+#   Everywhere       {prefix}
+#   Check data       {ip} {risk_score} {detection_type} {isp} {country} {country_code}
+#                    {city} {region} {timezone} {asn} {org}
+#                    {vpn_status} {proxy_status} {tor_status} {datacenter_status}
+#                    {residential_status} {mobile_status}   → rendered with check-safe / check-blocked
+#   kick-message     all "Check data" placeholders (empty when the API was unreachable)
+#   alert-message    all "Check data" placeholders + {player} {action} {reason}
+#   check-pending    {ip}
+#   check-failed     {error}
+#   player-resolve-failed  {error}
+#   whitelist-*      {target} {count} {ip} {name} {uuid}
+#   cache-cleared    {size}
+#   status-online    {status} {latency}
+
 # Plugin prefix used in all messages
 prefix: "&#7C3AED&lAxiom &8» &7"
 
-# Message shown to blocked players
-kick-message: "&c&lVPN Detected\n\n&7Your connection has been blocked.\n&7Disable your VPN/Proxy and reconnect.\n\n&8Risk Score: {risk_score} | {detection_type}"
+# Disconnect screen shown to blocked players (one list entry per line)
+kick-message:
+  - "&c&lVPN Detected"
+  - ""
+  - "&7Your connection has been blocked."
+  - "&7Disable your VPN/Proxy and reconnect."
+  - ""
+  - "&8Risk Score: {risk_score} | {detection_type}"
 
-# Alert sent to staff when a player is blocked
-alert-message: "{prefix}&e{player} &7was blocked &8(&c{detection_type}&8) &7IP: &f{ip} &7Score: &c{risk_score}"
+# Alert sent to staff holding alerts.permission (one list entry per line)
+alert-message:
+  - "{prefix}&e{player} &7was blocked &8(&c{detection_type}&8) &7IP: &f{ip} &7Score: &c{risk_score} &7Action: &f{action}"
 
 # Whitelist messages
 whitelist-add: "{prefix}&a{target} &7has been whitelisted."
@@ -22,10 +58,13 @@ whitelist-list-player-entry: "&8 - &f{name} &7({uuid})"
 reload-success: "{prefix}&aConfiguration reloaded successfully."
 no-permission: "{prefix}&cYou do not have permission to use this command."
 player-not-found: "{prefix}&cPlayer not found."
+player-resolve-failed: "{prefix}&cFailed to resolve player: &7{error}"
 invalid-ip: "{prefix}&cInvalid IP address."
 
 # Check result display
+check-pending: "{prefix}&7Checking IP &f{ip}&7..."
 check-result: "{prefix}&7IP: &f{ip} &8| &7VPN: {vpn_status} &8| &7Proxy: {proxy_status} &8| &7Score: &e{risk_score} &8| &7ISP: &f{isp} &8| &7Country: &f{country}"
+check-failed: "{prefix}&cFailed to check IP: &7{error}"
 check-safe: "&a&lSAFE"
 check-blocked: "&c&lBLOCKED"
 
@@ -33,7 +72,7 @@ check-blocked: "&c&lBLOCKED"
 cache-cleared: "{prefix}&aCache has been cleared. &7({size} entries removed)"
 
 # Status messages
-status-online: "{prefix}&aAPI Status: &2ONLINE &8| &7Latency: &a{latency}ms"
+status-online: "{prefix}&aAPI Status: &2{status} &8| &7Latency: &a{latency}ms"
 status-offline: "{prefix}&cAPI Status: &4OFFLINE"
 
 # Help message

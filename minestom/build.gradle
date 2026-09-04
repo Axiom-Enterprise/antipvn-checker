@@ -3,14 +3,47 @@ plugins {
     id 'com.gradleup.shadow'
 }
 
+def minestomAdventure = '4.23.0'
+
 dependencies {
     implementation project(':common')
     compileOnly 'net.minestom:minestom:2025.07.03-1.21.5'
 }
 
+// The embedding server provides Adventure; align our transitive copy with Minestom's version so the
+// relocated MiniMessage never calls into a newer Adventure API than the one on the server classpath.
+configurations.configureEach {
+    resolutionStrategy.eachDependency { details ->
+        if (details.requested.group == 'net.kyori' && details.requested.name.startsWith('adventure')) {
+            details.useVersion(minestomAdventure)
+        }
+    }
+}
+
 shadowJar {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     archiveClassifier.set('')
     archiveBaseName.set('AxiomAntiVPN-Minestom')
+
+    dependencies {
+        exclude(dependency('net.kyori:adventure-api:.*'))
+        exclude(dependency('net.kyori:adventure-key:.*'))
+        exclude(dependency('net.kyori:adventure-text-serializer-legacy:.*'))
+        exclude(dependency('net.kyori:examination-.*:.*'))
+        exclude(dependency('net.kyori:option:.*'))
+        exclude(dependency('org.slf4j:.*:.*'))
+        exclude(dependency('org.jetbrains:annotations:.*'))
+    }
+
+    relocate 'com.github.benmanes.caffeine', 'com.axiom.antivpn.libs.caffeine'
+    relocate 'com.google.gson', 'com.axiom.antivpn.libs.gson'
+    relocate 'org.yaml.snakeyaml', 'com.axiom.antivpn.libs.snakeyaml'
+    relocate 'net.kyori.adventure.text.minimessage', 'com.axiom.antivpn.libs.minimessage'
+
+    minimize {
+        exclude dependency('com.github.ben-manes.caffeine:.*')
+        exclude dependency('org.xerial:sqlite-jdbc:.*')
+    }
 }
 
 build.dependsOn shadowJar

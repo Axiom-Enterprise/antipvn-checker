@@ -2,6 +2,7 @@ name: AxiomAntiVPN
 version: '${version}'
 main: com.axiom.antivpn.folia.FoliaAntiVpnPlugin
 api-version: '1.21'
+folia-supported: true
 description: Advanced VPN & Proxy Detection powered by Axiom AntiVPN API
 authors: [Axiom]
 website: https://antivpn.mathsanalysis.com
@@ -9,8 +10,11 @@ softdepend: [PlaceholderAPI, LuckPerms]
 
 permissions:
   antivpn.admin:
+    description: Access to all AntiVPN commands
     default: op
   antivpn.bypass:
+    description: Bypass VPN detection checks
     default: false
   antivpn.alerts:
+    description: Receive staff alerts when a player is blocked
     default: op

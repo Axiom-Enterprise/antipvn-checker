@@ -1,0 +1,83 @@
+# ╔══════════════════════════════════════════════════════════════╗
+# ║                 Axiom AntiVPN - Messages                     ║
+# ╚══════════════════════════════════════════════════════════════╝
+#
+# ── Text formatting ────────────────────────────────────────────
+#   Legacy colours   &0-&9 &a-&f  formats &l &o &n &m &k  reset &r
+#   Hex colours      &#RRGGBB                 e.g. "&#7C3AEDAxiom"
+#   RGB              {rgb:R,G,B}              e.g. "{rgb:124,58,237}Axiom"
+#   Gradient         {gradient:#RRGGBB:#RRGGBB}text{/gradient}
+#   Bedrock clients cannot display RGB: hex, RGB and gradients are mapped to the closest legacy colour.
+#   MiniMessage      prefix the value with mm:
+#                    e.g. "mm:<gradient:#7C3AED:#EC4899><bold>Axiom</bold></gradient> <gray>text"
+#   Multi-line       kick-message and alert-message accept a YAML list, one entry per line.
+#                    Each entry is rendered on its own, so lines may mix mm: and legacy syntax.
+#
+# ── Placeholders ───────────────────────────────────────────────
+#   Everywhere       {prefix}
+#   Check data       {ip} {risk_score} {detection_type} {isp} {country} {country_code}
+#                    {city} {region} {timezone} {asn} {org}
+#                    {vpn_status} {proxy_status} {tor_status} {datacenter_status}
+#                    {residential_status} {mobile_status}   → rendered with check-safe / check-blocked
+#   kick-message     all "Check data" placeholders (empty when the API was unreachable)
+#   alert-message    all "Check data" placeholders + {player} {action} {reason}
+#   check-pending    {ip}
+#   check-failed     {error}
+#   player-resolve-failed  {error}
+#   whitelist-*      {target} {count} {ip} {name} {uuid}
+#   cache-cleared    {size}
+#   status-online    {status} {latency}
+
+# Plugin prefix used in all messages
+prefix: "&#7C3AED&lAxiom &8» &7"
+
+# Disconnect screen shown to blocked players (one list entry per line)
+kick-message:
+  - "&c&lVPN Detected"
+  - ""
+  - "&7Your connection has been blocked."
+  - "&7Disable your VPN/Proxy and reconnect."
+  - ""
+  - "&8Risk Score: {risk_score} | {detection_type}"
+
+# Alert sent to staff holding alerts.permission (one list entry per line)
+alert-message:
+  - "{prefix}&e{player} &7was blocked &8(&c{detection_type}&8) &7IP: &f{ip} &7Score: &c{risk_score} &7Action: &f{action}"
+
+# Whitelist messages
+whitelist-add: "{prefix}&a{target} &7has been whitelisted."
+whitelist-remove: "{prefix}&c{target} &7has been removed from the whitelist."
+whitelist-already: "{prefix}&e{target} &7is already whitelisted."
+whitelist-not-found: "{prefix}&c{target} &7is not whitelisted."
+whitelist-list-empty: "{prefix}&7Whitelist is empty."
+whitelist-list-ips-header: "{prefix}&7Whitelisted IPs (&f{count}&7):"
+whitelist-list-ip-entry: "&8 - &f{ip}"
+whitelist-list-players-header: "{prefix}&7Whitelisted players (&f{count}&7):"
+whitelist-list-player-entry: "&8 - &f{name} &7({uuid})"
+
+# Command messages
+reload-success: "{prefix}&aConfiguration reloaded successfully."
+no-permission: "{prefix}&cYou do not have permission to use this command."
+player-not-found: "{prefix}&cPlayer not found."
+player-resolve-failed: "{prefix}&cFailed to resolve player: &7{error}"
+invalid-ip: "{prefix}&cInvalid IP address."
+
+# Check result display
+check-pending: "{prefix}&7Checking IP &f{ip}&7..."
+check-result: "{prefix}&7IP: &f{ip} &8| &7VPN: {vpn_status} &8| &7Proxy: {proxy_status} &8| &7Score: &e{risk_score} &8| &7ISP: &f{isp} &8| &7Country: &f{country}"
+check-failed: "{prefix}&cFailed to check IP: &7{error}"
+check-safe: "&a&lSAFE"
+check-blocked: "&c&lBLOCKED"
+
+# Cache messages
+cache-cleared: "{prefix}&aCache has been cleared. &7({size} entries removed)"
+
+# Status messages
+status-online: "{prefix}&aAPI Status: &2{status} &8| &7Latency: &a{latency}ms"
+status-offline: "{prefix}&cAPI Status: &4OFFLINE"
+
+# Help message
+usage-help: "{prefix}&eUsage:\n&7/vpn check <ip> &8- &7Check an IP\n&7/vpn stats &8- &7Statistics\n&7/vpn history <player> [limit] &8- &7Recent checks\n&7/vpn whitelist add <ip|player> &8- &7Whitelist\n&7/vpn whitelist remove <ip|player> &8- &7Remove whitelist\n&7/vpn whitelist list &8- &7List whitelist\n&7/vpn status &8- &7API status\n&7/vpn cache clear &8- &7Clear cache\n&7/vpn reload &8- &7Reload config"
+
+# API key not configured
+api-key-missing: "{prefix}&cAPI key is not configured! Set it in config.yml"

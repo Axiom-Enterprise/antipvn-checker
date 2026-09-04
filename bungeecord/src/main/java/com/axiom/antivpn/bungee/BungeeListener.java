@@ -1,19 +1,20 @@
 package com.axiom.antivpn.bungee;
 
 import com.axiom.antivpn.common.AntiVpnEngine;
-import com.axiom.antivpn.common.util.IpUtil;
-import com.axiom.antivpn.common.policy.EnforcementAction;
+import com.axiom.antivpn.common.check.LoginVerdict;
+import com.axiom.antivpn.common.network.NetworkDecision;
+import com.axiom.antivpn.common.network.NetworkDecisionCodec;
+import com.axiom.antivpn.common.policy.PolicyDecision;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.event.PreLoginEvent;
 import net.md_5.bungee.api.event.ServerConnectedEvent;
 import net.md_5.bungee.api.plugin.Listener;
+import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
 import org.jetbrains.annotations.NotNull;
-import com.axiom.antivpn.common.network.NetworkDecision;
-import com.axiom.antivpn.common.network.NetworkDecisionCodec;
-import com.axiom.antivpn.common.policy.PolicyDecision;
 
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Locale;
@@ -21,66 +22,59 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class BungeeListener implements Listener {
 
-    private final @NotNull AntiVpnEngine engine;
-    private final ConcurrentHashMap<String, PendingDecision> pending = new ConcurrentHashMap<>();
-    private final NetworkDecisionCodec codec = new NetworkDecisionCodec();
+    private static final String NETWORK_PROXY = "PROXY";
 
-    public BungeeListener(@NotNull AntiVpnEngine engine) {
+    private final @NotNull AntiVpnEngine engine;
+    private final @NotNull Plugin plugin;
+    private final @NotNull ConcurrentHashMap<String, PendingDecision> pending = new ConcurrentHashMap<>();
+    private final @NotNull NetworkDecisionCodec codec = new NetworkDecisionCodec();
+
+    public BungeeListener(@NotNull AntiVpnEngine engine, @NotNull Plugin plugin) {
         this.engine = engine;
+        this.plugin = plugin;
     }
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onPreLogin(@NotNull PreLoginEvent event) {
-        if (!engine.getSettings().isCheckOnLogin()) return;
-        if (event.getConnection().getAddress() == null) return;
+        if (event.isCancelled()) return;
+        InetSocketAddress address = event.getConnection().getAddress();
+        if (address == null || address.getAddress() == null) return;
 
-        String ip = event.getConnection().getAddress().getAddress().getHostAddress();
-        if (IpUtil.isLocalIp(ip)) return;
+        String ip = address.getAddress().getHostAddress();
+        String name = event.getConnection().getName();
+        if (!engine.shouldCheckLogin(ip, null, name)) return;
 
-        if (engine.getWhitelist().isIpWhitelisted(ip)
-                || engine.getWhitelist().isPlayerNameWhitelisted(event.getConnection().getName())) return;
-
-        event.registerIntent((net.md_5.bungee.api.plugin.Plugin) ((BungeePlatform) engine.getPlatform()).getPlugin());
-
-        engine.checkIp(ip).thenAccept(response -> {
+        event.registerIntent(plugin);
+        engine.verifyLogin(null, name, ip).whenComplete((verdict, error) -> {
             try {
-                if (response != null) {
-                    var decision = engine.processCheck(null, event.getConnection().getName(), ip, response);
-                    if (engine.getSettings().getNetworkMode().equals("PROXY") && decision.action() != EnforcementAction.KICK) {
-                        pending.put(event.getConnection().getName().toLowerCase(Locale.ROOT), new PendingDecision(ip, response.riskScore(), decision));
-                    }
-                    if (decision.action() != EnforcementAction.KICK) return;
-                    String kickMsg = engine.getMessages().format(engine.getMessages().getKickMessage(), response);
-                    event.setCancelled(true);
-                    event.setCancelReason(TextComponent.fromLegacy(kickMsg));
+                if (error == null) {
+                    apply(event, name, ip, verdict);
                 }
             } finally {
-                event.completeIntent(((BungeePlatform) engine.getPlatform()).getPlugin());
+                event.completeIntent(plugin);
             }
-        }).exceptionally(ex -> {
-            try {
-                engine.getPlatform().getPluginLogger().warning("Failed to check IP: " + ex.getClass().getSimpleName());
-                engine.recordFailure(null, event.getConnection().getName(), ip);
-                if (engine.getSettings().isBlockOnApiFailure()) {
-                    event.setCancelled(true);
-                    event.setCancelReason(TextComponent.fromLegacy(
-                            engine.getMessages().format(engine.getMessages().getKickMessage())));
-                }
-            } finally {
-                event.completeIntent(((BungeePlatform) engine.getPlatform()).getPlugin());
-            }
-            return null;
         });
+    }
+
+    private void apply(@NotNull PreLoginEvent event, @NotNull String name, @NotNull String ip, @NotNull LoginVerdict verdict) {
+        if (verdict.denied()) {
+            event.setCancelled(true);
+            event.setCancelReason(TextComponent.fromLegacy(verdict.kickMessage()));
+            return;
+        }
+        if (verdict.checked() && engine.getSettings().getNetworkMode().equals(NETWORK_PROXY)) {
+            pending.put(name.toLowerCase(Locale.ROOT), new PendingDecision(ip, verdict.response().riskScore(), verdict.decision()));
+        }
     }
 
     @EventHandler
     public void onServerConnected(@NotNull ServerConnectedEvent event) {
         PendingDecision value = pending.remove(event.getPlayer().getName().toLowerCase(Locale.ROOT));
-        if (value == null || !engine.getSettings().getNetworkMode().equals("PROXY")) return;
+        if (value == null || !engine.getSettings().getNetworkMode().equals(NETWORK_PROXY)) return;
         NetworkDecision decision = new NetworkDecision(event.getPlayer().getUniqueId(), value.ip(), value.decision().action(),
                 value.decision().reason(), value.riskScore(), Instant.now().getEpochSecond());
         byte[] secret = engine.getSettings().getNetworkSecret().getBytes(StandardCharsets.UTF_8);
-        event.getServer().sendData("axiomantivpn:decision", codec.encode(decision, secret));
+        event.getServer().sendData(BungeeAntiVpnPlugin.DECISION_CHANNEL, codec.encode(decision, secret));
     }
 
     private record PendingDecision(@NotNull String ip, int riskScore, @NotNull PolicyDecision decision) {

@@ -1,21 +1,20 @@
 package com.axiom.antivpn.velocity;
 
 import com.axiom.antivpn.common.AntiVpnEngine;
-import com.axiom.antivpn.common.util.IpUtil;
-import com.axiom.antivpn.common.policy.EnforcementAction;
+import com.axiom.antivpn.common.check.LoginVerdict;
+import com.axiom.antivpn.common.color.ColorParser;
+import com.axiom.antivpn.common.network.NetworkDecision;
+import com.axiom.antivpn.common.network.NetworkDecisionCodec;
+import com.axiom.antivpn.common.policy.PolicyDecision;
 import com.velocitypowered.api.event.Continuation;
 import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.PreLoginEvent;
 import com.velocitypowered.api.event.player.ServerPostConnectEvent;
-import com.axiom.antivpn.common.network.NetworkDecision;
-import com.axiom.antivpn.common.network.NetworkDecisionCodec;
-import com.axiom.antivpn.common.policy.PolicyDecision;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import com.velocitypowered.api.proxy.ServerConnection;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.concurrent.ForkJoinPool;
+import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Locale;
@@ -23,14 +22,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class VelocityListener {
 
-    private static final LegacyComponentSerializer SERIALIZER = LegacyComponentSerializer.builder()
-            .character('§')
-            .hexColors()
-            .build();
+    private static final String NETWORK_PROXY = "PROXY";
 
     private final @NotNull AntiVpnEngine engine;
-    private final ConcurrentHashMap<String, PendingDecision> pending = new ConcurrentHashMap<>();
-    private final NetworkDecisionCodec codec = new NetworkDecisionCodec();
+    private final @NotNull ConcurrentHashMap<String, PendingDecision> pending = new ConcurrentHashMap<>();
+    private final @NotNull NetworkDecisionCodec codec = new NetworkDecisionCodec();
 
     public VelocityListener(@NotNull AntiVpnEngine engine) {
         this.engine = engine;
@@ -38,61 +34,47 @@ public final class VelocityListener {
 
     @Subscribe(order = PostOrder.LATE)
     public void onPreLogin(@NotNull PreLoginEvent event, @NotNull Continuation continuation) {
-        if (!engine.getSettings().isCheckOnLogin()) {
+        InetAddress address = event.getConnection().getRemoteAddress().getAddress();
+        if (!event.getResult().isAllowed() || address == null) {
             continuation.resume();
             return;
         }
 
-        String ip = event.getConnection().getRemoteAddress().getAddress().getHostAddress();
-        if (IpUtil.isLocalIp(ip)) {
+        String ip = address.getHostAddress();
+        String name = event.getUsername();
+        if (!engine.shouldCheckLogin(ip, null, name)) {
             continuation.resume();
             return;
         }
 
-        if (engine.getWhitelist().isIpWhitelisted(ip) || engine.getWhitelist().isPlayerNameWhitelisted(event.getUsername())) {
-            continuation.resume();
-            return;
-        }
-
-        engine.checkIp(ip).thenAccept(response -> {
-            if (response != null) {
-                var decision = engine.processCheck(null, event.getUsername(), ip, response);
-                if (engine.getSettings().getNetworkMode().equals("PROXY") && decision.action() != EnforcementAction.KICK) {
-                    pending.put(event.getUsername().toLowerCase(Locale.ROOT), new PendingDecision(ip, response.riskScore(), decision));
-                }
-                if (decision.action() != EnforcementAction.KICK) {
-                    continuation.resume();
-                    return;
-                }
-                String kickMsg = engine.getMessages().format(engine.getMessages().getKickMessage(), response);
-                event.setResult(PreLoginEvent.PreLoginComponentResult.denied(deserialize(kickMsg)));
+        engine.verifyLogin(null, name, ip).whenComplete((verdict, error) -> {
+            if (error == null) {
+                apply(event, name, ip, verdict);
             }
             continuation.resume();
-        }).exceptionally(ex -> {
-            engine.getPlatform().getPluginLogger().warning("Failed to check IP: " + ex.getClass().getSimpleName());
-            engine.recordFailure(null, event.getUsername(), ip);
-            if (engine.getSettings().isBlockOnApiFailure()) {
-                String kickMsg = engine.getMessages().format(engine.getMessages().getKickMessage());
-                event.setResult(PreLoginEvent.PreLoginComponentResult.denied(deserialize(kickMsg)));
-            }
-            continuation.resume();
-            return null;
         });
+    }
+
+    private void apply(@NotNull PreLoginEvent event, @NotNull String name, @NotNull String ip, @NotNull LoginVerdict verdict) {
+        if (verdict.denied()) {
+            event.setResult(PreLoginEvent.PreLoginComponentResult.denied(ColorParser.toComponent(verdict.kickMessage())));
+            return;
+        }
+        if (verdict.checked() && engine.getSettings().getNetworkMode().equals(NETWORK_PROXY)) {
+            pending.put(name.toLowerCase(Locale.ROOT), new PendingDecision(ip, verdict.response().riskScore(), verdict.decision()));
+        }
     }
 
     @Subscribe
     public void onServerPostConnect(@NotNull ServerPostConnectEvent event) {
         PendingDecision value = pending.remove(event.getPlayer().getUsername().toLowerCase(Locale.ROOT));
-        if (value == null || !engine.getSettings().getNetworkMode().equals("PROXY")) return;
+        if (value == null || !engine.getSettings().getNetworkMode().equals(NETWORK_PROXY)) return;
+        ServerConnection connection = event.getPlayer().getCurrentServer().orElse(null);
+        if (connection == null) return;
         NetworkDecision decision = new NetworkDecision(event.getPlayer().getUniqueId(), value.ip(), value.decision().action(),
                 value.decision().reason(), value.riskScore(), Instant.now().getEpochSecond());
         byte[] secret = engine.getSettings().getNetworkSecret().getBytes(StandardCharsets.UTF_8);
-        event.getPlayer().getCurrentServer().ifPresent(connection ->
-                connection.sendPluginMessage(VelocityAntiVpnPlugin.DECISION_CHANNEL, codec.encode(decision, secret)));
-    }
-
-    private static @NotNull Component deserialize(@NotNull String message) {
-        return SERIALIZER.deserialize(message);
+        connection.sendPluginMessage(VelocityAntiVpnPlugin.DECISION_CHANNEL, codec.encode(decision, secret));
     }
 
     private record PendingDecision(@NotNull String ip, int riskScore, @NotNull PolicyDecision decision) {

@@ -1,7 +1,6 @@
 package com.axiom.antivpn.bukkit;
 
-import com.axiom.antivpn.common.AntiVpnEngine;
-import com.axiom.antivpn.common.config.Messages;
+import com.axiom.antivpn.common.command.VpnCommands;
 import org.jetbrains.annotations.NotNull;
 import revxrsal.commands.bukkit.actor.BukkitCommandActor;
 import revxrsal.commands.bukkit.exception.BukkitExceptionHandler;
@@ -12,27 +11,24 @@ import revxrsal.commands.node.ParameterNode;
 
 public final class BukkitVpnExceptionHandler extends BukkitExceptionHandler {
 
-    private final @NotNull AntiVpnEngine engine;
+    private final @NotNull VpnCommands commands;
 
-    public BukkitVpnExceptionHandler(@NotNull AntiVpnEngine engine) {
-        this.engine = engine;
+    public BukkitVpnExceptionHandler(@NotNull VpnCommands commands) {
+        this.commands = commands;
     }
 
     @Override
     public void onNoPermission(@NotNull NoPermissionException e, @NotNull BukkitCommandActor actor) {
-        Messages messages = engine.getMessages();
-        actor.reply(messages.format(messages.getNoPermission()));
+        commands.noPermission(actor::reply);
     }
 
     @Override
     public void onUnknownCommand(@NotNull UnknownCommandException e, @NotNull BukkitCommandActor actor) {
-        Messages messages = engine.getMessages();
-        actor.reply(messages.format(messages.getUsageHelp()));
+        commands.usage(actor::reply);
     }
 
     @Override
     public void onMissingArgument(@NotNull MissingArgumentException e, @NotNull BukkitCommandActor actor, @NotNull ParameterNode<BukkitCommandActor, ?> parameter) {
-        Messages messages = engine.getMessages();
-        actor.reply(messages.format(messages.getUsageHelp()));
+        commands.usage(actor::reply);
     }
 }

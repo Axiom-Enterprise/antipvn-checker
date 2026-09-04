@@ -12,8 +12,22 @@ dependencies {
 }
 
 shadowJar {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     archiveClassifier.set('')
     archiveBaseName.set('AxiomAntiVPN-Folia')
+
+    relocate 'com.github.benmanes.caffeine', 'com.axiom.antivpn.libs.caffeine'
+    relocate 'com.google.gson', 'com.axiom.antivpn.libs.gson'
+    relocate 'org.yaml.snakeyaml', 'com.axiom.antivpn.libs.snakeyaml'
+    relocate 'revxrsal.commands', 'com.axiom.antivpn.libs.lamp'
+    relocate 'net.kyori.adventure.text.minimessage', 'com.axiom.antivpn.libs.minimessage'
+
+    minimize {
+        exclude dependency('com.github.ben-manes.caffeine:.*')
+        exclude dependency('io.github.revxrsal:.*')
+        exclude dependency('org.xerial:sqlite-jdbc:.*')
+        exclude project(':bukkit')
+    }
 }
 
 build.dependsOn shadowJar

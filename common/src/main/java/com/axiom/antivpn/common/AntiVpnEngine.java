@@ -7,6 +7,7 @@ import com.axiom.antivpn.api.event.IpCheckEvent;
 import com.axiom.antivpn.api.model.ApiStatus;
 import com.axiom.antivpn.api.model.VpnResponse;
 import com.axiom.antivpn.common.cache.VpnCache;
+import com.axiom.antivpn.common.check.LoginVerdict;
 import com.axiom.antivpn.common.check.WhitelistManager;
 import com.axiom.antivpn.common.check.WhitelistStorage;
 import com.axiom.antivpn.common.config.Messages;
@@ -14,16 +15,17 @@ import com.axiom.antivpn.common.config.PluginConfig;
 import com.axiom.antivpn.common.config.Settings;
 import com.axiom.antivpn.common.http.HttpClient;
 import com.axiom.antivpn.common.http.ResponseParser;
-import com.axiom.antivpn.common.platform.Platform;
 import com.axiom.antivpn.common.network.NetworkDecision;
+import com.axiom.antivpn.common.platform.Platform;
 import com.axiom.antivpn.common.policy.CommandTemplate;
 import com.axiom.antivpn.common.policy.DetectionPolicy;
 import com.axiom.antivpn.common.policy.EnforcementAction;
 import com.axiom.antivpn.common.policy.PolicyDecision;
 import com.axiom.antivpn.common.telemetry.CheckRecord;
 import com.axiom.antivpn.common.telemetry.StatsSnapshot;
-import com.axiom.antivpn.common.telemetry.TelemetryStorage;
 import com.axiom.antivpn.common.telemetry.TelemetryFormatter;
+import com.axiom.antivpn.common.telemetry.TelemetryStorage;
+import com.axiom.antivpn.common.util.IpUtil;
 import com.axiom.antivpn.common.webhook.DiscordWebhookNotifier;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -32,18 +34,24 @@ import com.google.gson.JsonObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 public final class AntiVpnEngine implements AntiVpnAPI {
 
+    public static final String BYPASS_PERMISSION = "antivpn.bypass";
+    private static final String NETWORK_BACKEND = "BACKEND";
+
     private final @NotNull Platform platform;
+    private final @NotNull PluginConfig mainConfig;
+    private final @NotNull PluginConfig messagesConfig;
     private final @NotNull Settings settings;
     private final @NotNull Messages messages;
     private final @NotNull VpnCache cache;
@@ -58,6 +66,8 @@ public final class AntiVpnEngine implements AntiVpnAPI {
 
     public AntiVpnEngine(@NotNull Platform platform, @NotNull PluginConfig mainConfig, @NotNull PluginConfig messagesConfig) {
         this.platform = platform;
+        this.mainConfig = mainConfig;
+        this.messagesConfig = messagesConfig;
         this.settings = new Settings(mainConfig);
         this.messages = new Messages(messagesConfig);
         this.cache = new VpnCache(settings);
@@ -67,11 +77,14 @@ public final class AntiVpnEngine implements AntiVpnAPI {
         this.httpClient = new HttpClient(settings, platform.getAsyncExecutor(), platform.getPluginLogger());
         this.policy = new DetectionPolicy(settings);
         this.telemetry = new TelemetryStorage(platform.getDataFolder(), platform.getPluginLogger(), settings.getHistoryMaxRows());
-        this.telemetry.purgeOlderThan(java.time.Duration.ofDays(settings.getHistoryRetentionDays()));
+        this.telemetry.purgeOlderThan(Duration.ofDays(settings.getHistoryRetentionDays()));
         this.webhook = new DiscordWebhookNotifier(settings, java.net.http.HttpClient.newBuilder()
-                .executor(platform.getAsyncExecutor()).connectTimeout(java.time.Duration.ofSeconds(5)).build(), platform.getPluginLogger());
+                .executor(platform.getAsyncExecutor()).connectTimeout(Duration.ofSeconds(5)).build(), platform.getPluginLogger());
         this.lastResults = Caffeine.newBuilder().maximumSize(10000).expireAfterWrite(30, TimeUnit.MINUTES).build();
 
+        if (settings.getApiKey().isEmpty()) {
+            platform.getPluginLogger().warning("API key not configured: VPN checks are disabled until api.key is set");
+        }
         AntiVpnProvider.register(this);
     }
 
@@ -180,35 +193,53 @@ public final class AntiVpnEngine implements AntiVpnAPI {
         cache.clear();
     }
 
+    /** Local addresses, whitelisted IPs/players and BACKEND mode never hit the API. */
+    public boolean shouldCheckLogin(@NotNull String ip, @Nullable UUID uuid, @NotNull String name) {
+        if (!settings.isCheckOnLogin() || settings.getNetworkMode().equals(NETWORK_BACKEND)) return false;
+        if (IpUtil.isLocalIp(ip) || whitelist.isIpWhitelisted(ip)) return false;
+        if (uuid != null && whitelist.isPlayerWhitelisted(uuid)) return false;
+        return !whitelist.isPlayerNameWhitelisted(name);
+    }
+
+    /**
+     * Full pre-login pipeline: gate, API check, policy, alerts, telemetry and kick-message rendering.
+     * Never completes exceptionally; API failures honour {@code detection.block-on-api-failure}.
+     */
+    public @NotNull CompletableFuture<LoginVerdict> verifyLogin(@Nullable UUID uuid, @NotNull String name, @NotNull String ip) {
+        if (!shouldCheckLogin(ip, uuid, name) || settings.getApiKey().isEmpty()) {
+            return CompletableFuture.completedFuture(LoginVerdict.ALLOW);
+        }
+        return checkIp(ip).handle((response, error) -> {
+            if (error != null) {
+                return loginFailure(uuid, name, ip, error);
+            }
+            try {
+                PolicyDecision decision = processCheck(uuid, name, ip, response);
+                String kick = decision.action() == EnforcementAction.KICK ? messages.formatKick(response) : null;
+                return new LoginVerdict(response, decision, kick);
+            } catch (RuntimeException e) {
+                return loginFailure(uuid, name, ip, e);
+            }
+        });
+    }
+
+    private @NotNull LoginVerdict loginFailure(@Nullable UUID uuid, @NotNull String name, @NotNull String ip, @NotNull Throwable error) {
+        Throwable cause = error instanceof CompletionException && error.getCause() != null ? error.getCause() : error;
+        platform.getPluginLogger().log(Level.WARNING, "Failed to check IP for " + name + ": " + cause.getClass().getSimpleName());
+        recordFailure(uuid, name, ip);
+        return settings.isBlockOnApiFailure() ? LoginVerdict.deny(messages.formatKick()) : LoginVerdict.ALLOW;
+    }
+
+    /** Post-login variant for platforms that can only act once the player object exists. */
     public @NotNull CompletableFuture<Void> handlePlayerJoin(@NotNull UUID uuid, @NotNull String name, @NotNull String ip) {
-        if (settings.getApiKey().isEmpty()) {
-            platform.getPluginLogger().warning("API key not configured. Skipping VPN check for " + name);
+        if (platform.hasPermission(uuid, BYPASS_PERMISSION)) {
             return CompletableFuture.completedFuture(null);
         }
-
-        if (whitelist.isIpWhitelisted(ip) || whitelist.isPlayerWhitelisted(uuid)) {
-            return CompletableFuture.completedFuture(null);
-        }
-
-        if (platform.hasPermission(uuid, "antivpn.bypass")) {
-            return CompletableFuture.completedFuture(null);
-        }
-
-        return checkIp(ip)
-                .thenAccept(response -> {
-                    PolicyDecision decision = processCheck(uuid, name, ip, response);
-                    if (decision.action() == EnforcementAction.KICK) {
-                        platform.kickPlayer(uuid, messages.format(messages.getKickMessage(), response));
-                    }
-                })
-                .exceptionally(ex -> {
-                    platform.getPluginLogger().log(Level.WARNING, "Failed to check IP for " + name + ": " + ex.getClass().getSimpleName());
-                    recordFailure(uuid, name, ip);
-                    if (settings.isBlockOnApiFailure()) {
-                        platform.kickPlayer(uuid, messages.format(messages.getKickMessage()));
-                    }
-                    return null;
-                });
+        return verifyLogin(uuid, name, ip).thenAccept(verdict -> {
+            if (verdict.denied()) {
+                platform.kickPlayer(uuid, verdict.kickMessage());
+            }
+        });
     }
 
     public @NotNull PolicyDecision processCheck(@Nullable UUID uuid, @NotNull String name,
@@ -225,11 +256,14 @@ public final class AntiVpnEngine implements AntiVpnAPI {
                     decision.reason(), response.riskScore(), decision.action(), decision.matched(), response.cached(), false));
         }
         if (!decision.matched()) return decision;
-        alert(name, response);
+        alert(name, response, decision);
         if (decision.action() == EnforcementAction.COMMAND) {
             for (String template : decision.commands()) {
-                try { platform.dispatchConsoleCommand(CommandTemplate.render(template, name, ip, response.riskScore(), decision.reason())); }
-                catch (IllegalArgumentException e) { platform.getPluginLogger().warning("Configured AntiVPN command was rejected"); }
+                try {
+                    platform.dispatchConsoleCommand(CommandTemplate.render(template, name, ip, response.riskScore(), decision.reason()));
+                } catch (IllegalArgumentException e) {
+                    platform.getPluginLogger().warning("Configured AntiVPN command was rejected");
+                }
             }
         }
         webhook.notify(name, ip, response, decision);
@@ -241,23 +275,13 @@ public final class AntiVpnEngine implements AntiVpnAPI {
         return policy.evaluate(response).action() == EnforcementAction.KICK;
     }
 
-    private @NotNull String resolveDetectionLabel(@NotNull VpnResponse response) {
-        if (response.vpn()) return "VPN";
-        if (response.proxy()) return "Proxy";
-        if (response.tor()) return "Tor";
-        if (response.datacenter()) return "Datacenter";
-        return "High Risk Score";
-    }
-
     public void alertAndLog(@Nullable UUID uuid, @NotNull String name, @NotNull String ip, @NotNull VpnResponse response) {
         processCheck(uuid, name, ip, response);
     }
 
-    private void alert(@NotNull String name, @NotNull VpnResponse response) {
-        if (settings.isAlertsEnabled()) {
-            String alertMsg = messages.format(messages.getAlertMessage(), response).replace("{player}", name);
-            platform.broadcastPermission(settings.getAlertPermission(), alertMsg);
-        }
+    private void alert(@NotNull String name, @NotNull VpnResponse response, @NotNull PolicyDecision decision) {
+        if (!settings.isAlertsEnabled()) return;
+        platform.broadcastPermission(settings.getAlertPermission(), messages.formatAlert(name, response, decision));
     }
 
     public void recordFailure(@Nullable UUID uuid, @NotNull String name, @NotNull String ip) {
@@ -272,7 +296,7 @@ public final class AntiVpnEngine implements AntiVpnAPI {
                 decision.action() != EnforcementAction.ALLOW, false, false));
     }
 
-    public void reload(@NotNull PluginConfig mainConfig, @NotNull PluginConfig messagesConfig) {
+    public void reload() {
         mainConfig.reload();
         messagesConfig.reload();
         settings.reload();

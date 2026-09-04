@@ -1,5 +1,8 @@
 package com.axiom.antivpn.bukkit;
 
+import com.axiom.antivpn.bukkit.scheduler.BukkitSchedulerAdapter;
+import com.axiom.antivpn.bukkit.scheduler.FoliaSchedulerAdapter;
+import com.axiom.antivpn.bukkit.scheduler.SchedulerAdapter;
 import com.axiom.antivpn.common.platform.Platform;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -9,45 +12,41 @@ import org.jetbrains.annotations.NotNull;
 import java.nio.file.Path;
 import java.util.UUID;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 public final class BukkitPlatform implements Platform {
 
     private final @NotNull JavaPlugin plugin;
-    private final Executor asyncExecutor;
+    private final @NotNull SchedulerAdapter scheduler;
+    private final boolean folia;
 
     public BukkitPlatform(@NotNull JavaPlugin plugin) {
         this.plugin = plugin;
-        this.asyncExecutor = runnable -> Bukkit.getScheduler().runTaskAsynchronously(plugin, runnable);
+        this.folia = SchedulerAdapter.isFolia();
+        this.scheduler = folia ? new FoliaSchedulerAdapter(plugin) : new BukkitSchedulerAdapter(plugin);
     }
 
-    @Override public @NotNull String getPlatformName() { return "Bukkit"; }
+    @Override public @NotNull String getPlatformName() { return folia ? "Folia" : "Bukkit"; }
     @Override public @NotNull Logger getPluginLogger() { return plugin.getLogger(); }
     @Override public @NotNull Path getDataFolder() { return plugin.getDataFolder().toPath(); }
-    @Override public @NotNull Executor getAsyncExecutor() { return asyncExecutor; }
+    @Override public @NotNull Executor getAsyncExecutor() { return scheduler::runAsync; }
 
     @Override
     public void runAsync(@NotNull Runnable task) {
-        if (runFoliaScheduler("getAsyncScheduler", "runNow", task)) return;
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, task);
+        scheduler.runAsync(task);
     }
 
     @Override
     public void runSync(@NotNull Runnable task) {
-        if (runFoliaScheduler("getGlobalRegionScheduler", "run", task)) return;
-        if (Bukkit.isPrimaryThread()) {
-            task.run();
-        } else {
-            Bukkit.getScheduler().runTask(plugin, task);
-        }
+        scheduler.runGlobal(task);
     }
 
     @Override
     public void kickPlayer(@NotNull UUID uuid, @NotNull String message) {
-        runSync(() -> {
-            Player player = Bukkit.getPlayer(uuid);
-            if (player != null) {
+        Player player = Bukkit.getPlayer(uuid);
+        if (player == null) return;
+        scheduler.runForEntity(player, () -> {
+            if (player.isOnline()) {
                 player.kickPlayer(message);
             }
         });
@@ -68,7 +67,7 @@ public final class BukkitPlatform implements Platform {
 
     @Override
     public void dispatchConsoleCommand(@NotNull String command) {
-        runSync(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command));
+        scheduler.runGlobal(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command));
     }
 
     @Override
@@ -95,17 +94,7 @@ public final class BukkitPlatform implements Platform {
         return plugin;
     }
 
-    private boolean runFoliaScheduler(@NotNull String getter, @NotNull String methodName, @NotNull Runnable task) {
-        try {
-            Object scheduler = Bukkit.class.getMethod(getter).invoke(null);
-            for (var method : scheduler.getClass().getMethods()) {
-                if (!method.getName().equals(methodName) || method.getParameterCount() != 2) continue;
-                Consumer<Object> callback = ignored -> task.run();
-                method.invoke(scheduler, plugin, callback);
-                return true;
-            }
-        } catch (ReflectiveOperationException | RuntimeException ignored) {
-        }
-        return false;
+    public boolean isFolia() {
+        return folia;
     }
 }
