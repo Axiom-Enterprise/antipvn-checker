@@ -8,6 +8,7 @@ website: https://antivpn.mathsanalysis.com
 
 commands:
   vpn:
+    aliases: [antivpn]
     description: Axiom AntiVPN commands
     usage: "/vpn <check|stats|history|whitelist|status|cache|reload>"
     permission: antivpn.admin

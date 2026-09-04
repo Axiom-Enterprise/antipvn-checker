@@ -9,7 +9,7 @@ import revxrsal.commands.annotation.Subcommand;
 import revxrsal.commands.bukkit.actor.BukkitCommandActor;
 import revxrsal.commands.bukkit.annotation.CommandPermission;
 
-@Command("vpn")
+@Command({"vpn", "antivpn"})
 @CommandPermission(VpnCommands.ADMIN_PERMISSION)
 public final class AntiVpnCommand {
 
@@ -19,7 +19,7 @@ public final class AntiVpnCommand {
         this.commands = commands;
     }
 
-    @Command("vpn")
+    @Command({"vpn", "antivpn"})
     public void usage(@NotNull BukkitCommandActor actor) {
         commands.usage(actor::reply);
     }

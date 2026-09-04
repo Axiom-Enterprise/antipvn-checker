@@ -12,7 +12,7 @@ import revxrsal.commands.velocity.annotation.CommandPermission;
 
 import java.util.function.Consumer;
 
-@Command("vpn")
+@Command({"vpn", "antivpn"})
 @CommandPermission(VpnCommands.ADMIN_PERMISSION)
 public final class AntiVpnCommand {
 
@@ -26,7 +26,7 @@ public final class AntiVpnCommand {
         return message -> actor.reply(ColorParser.toComponent(message));
     }
 
-    @Command("vpn")
+    @Command({"vpn", "antivpn"})
     public void usage(@NotNull VelocityCommandActor actor) {
         commands.usage(reply(actor));
     }
