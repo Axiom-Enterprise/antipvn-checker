@@ -19,7 +19,7 @@ Anti-VPN and proxy protection for Paper/Bukkit, Folia, BungeeCord, Velocity, Nuk
 | Jar | Target | Notes |
 |-----|--------|-------|
 | `AxiomAntiVPN-Bukkit` | Paper, Spigot, Bukkit | PlaceholderAPI expansion `axiomantivpn`, BACKEND plugin channel |
-| `AxiomAntiVPN-Folia` | Folia | Same code as Bukkit, `folia-supported`, region/entity schedulers |
+| `AxiomAntiVPN-Folia` | Folia | Dedicated `FoliaPlatform`: async, global-region and entity schedulers; PlaceholderAPI, BACKEND plugin channel |
 | `AxiomAntiVPN-BungeeCord` | BungeeCord, Waterfall | PROXY mode forwards signed decisions |
 | `AxiomAntiVPN-Velocity` | Velocity 3.x | PROXY mode forwards signed decisions |
 | `AxiomAntiVPN-NukkitX` | NukkitX (Bedrock) | Hex/gradients downsampled to the 16 Bedrock colours |

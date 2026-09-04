@@ -5,14 +5,14 @@ plugins {
 
 dependencies {
     implementation project(':common')
-    implementation project(':bukkit')
     compileOnly 'dev.folia:folia-api:1.21.11-R0.1-SNAPSHOT'
     implementation 'io.github.revxrsal:lamp.common:4.0.0-rc.18'
     implementation 'io.github.revxrsal:lamp.bukkit:4.0.0-rc.18'
+    compileOnly 'me.clip:placeholderapi:2.12.3'
 }
 
 shadowJar {
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     archiveClassifier.set('')
     archiveBaseName.set('AxiomAntiVPN-Folia')
 
@@ -26,14 +26,12 @@ shadowJar {
         exclude dependency('com.github.ben-manes.caffeine:.*')
         exclude dependency('io.github.revxrsal:.*')
         exclude dependency('org.xerial:sqlite-jdbc:.*')
-        exclude project(':bukkit')
     }
 }
 
 build.dependsOn shadowJar
 
 processResources {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    from project(':bukkit').sourceSets.main.resources
-    filesMatching('plugin.yml') { expand(version: project.version) }
+    def pluginVersion = version
+    filesMatching('plugin.yml') { expand(version: pluginVersion) }
 }
